@@ -9,12 +9,20 @@ import { fileURLToPath } from "url";
 import { createSpellJson, Enemy as EnemyData } from "./damage";
 import db from "./db";
 
+const PORT = process.env.PORT || 3000;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://jdbbloloping2.netlify.app/"
+  ],
+  Credentials: true
+}));
 
 interface UserRow {
   id: number;
@@ -150,6 +158,6 @@ app.get("/ranking", (req: Request, res: Response) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log("Server running");
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
