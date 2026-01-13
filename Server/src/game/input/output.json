@@ -1,0 +1,20 @@
+{"enemy":{"hp":50000,"name":"진하쌤, 윤지쌤"},"event":"battle_start","player":{"hp":100000,"name":"미림이"}}
+{"event":"player_turn","result":"fail","spellId":"치링치링 샤랄라 나날이 예뻐지는 나. 너무나도 소중해!"}
+{"damage":10000,"event":"enemy_turn","playerHp":90000,"result":"normal"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":10000,"event":"enemy_turn","playerHp":80000,"result":"normal"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":10000,"event":"enemy_turn","playerHp":70000,"result":"normal"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":20000,"event":"enemy_turn","playerHp":50000,"result":"strong"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":10000,"event":"enemy_turn","playerHp":40000,"result":"normal"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":10000,"event":"enemy_turn","playerHp":30000,"result":"normal"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":10000,"event":"enemy_turn","playerHp":20000,"result":"normal"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":10000,"event":"enemy_turn","playerHp":10000,"result":"normal"}
+{"event":"player_turn","result":"fail","spellId":""}
+{"damage":10000,"event":"enemy_turn","playerHp":0,"result":"normal"}
+{"event":"battle_end","winner":"enemy"}
