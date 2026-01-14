@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://magicgirl23.netlify.app/"
+    "https://magicgirl23.netlify.app"
   ],
   credentials: true
 }));
