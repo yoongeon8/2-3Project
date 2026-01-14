@@ -20,6 +20,8 @@ import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
 import {createSpellJson} from "../../../Server/serverFile/damage";
 
+export const SERVER_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "https://two-3project.onrender.com";
+
 const GlobalStyle = createGlobalStyle`
   @font-face {
     font-family: 'Cafe24ClassicType';
@@ -250,7 +252,7 @@ const handleMicClick = async (e: React.MouseEvent) => {
       try {
         setBattlePhase('processing'); // 중복 클릭 방지
 
-        const res = await fetch("http://localhost:3000/voice", {
+        const res = await fetch(`${SERVER_URL}/voice`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)

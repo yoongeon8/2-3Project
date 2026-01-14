@@ -21,6 +21,7 @@ import {spells, failMic} from "../../../Server/src/tsFile/spells";
 import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
 import {createSpellJson} from "../../../Server/serverFile/damage";
+import { SERVER_URL } from './prologPage';
 
 const GlobalStyle = createGlobalStyle`
   @font-face {
@@ -502,7 +503,7 @@ const pulse = keyframes`
         try {
           setBattlePhase('processing');
   
-          const res = await fetch("http://localhost:3000/voice", {
+          const res = await fetch(`${SERVER_URL}/voice`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
@@ -652,7 +653,7 @@ const pulse = keyframes`
             enemy: speakerConfig.srT.name,
             hp: playerHp
           };
-          const result = await fetch("http://localhost:3000/attack", {
+          const result = await fetch(`${SERVER_URL}/attack`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)

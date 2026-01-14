@@ -28,6 +28,7 @@ import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
 import {createSpellJson, Enemy} from "../../../Server/serverFile/damage";
 import { useNavigate } from 'react-router-dom';
+import { SERVER_URL } from './prologPage';
 
 // --- 스타일 정의 ---
 const GlobalStyle = createGlobalStyle`
@@ -509,7 +510,7 @@ const saveBattleResult = async (hp: number) => {
       try {
         setBattlePhase('processing');
 
-        const res = await fetch("http://localhost:3000/voice", {
+        const res = await fetch(`${SERVER_URL}/voice`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
@@ -622,14 +623,14 @@ const saveBattleResult = async (hp: number) => {
           enemy: speakerConfig.principal.name,
           hp: playerHp
         };
-        const result = await fetch("http://localhost:3000/attack", {
+        const result = await fetch(`${SERVER_URL}/attack`, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify(data)
         });
   
         if(result.ok){
-          const calcRank = await fetch("http://localhost:3000/calc/ranking", {
+          const calcRank = await fetch(`${SERVER_URL}/calc/ranking`, {
             method: "POST"
           });
           navigate("/rank");

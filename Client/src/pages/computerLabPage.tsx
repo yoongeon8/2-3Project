@@ -23,6 +23,8 @@ import {useVolume} from "../tsFolder/audio";
 import {createSpellJson, Enemy} from "../../../Server/serverFile/damage";
 import { useNavigate } from 'react-router-dom';
 
+import {SERVER_URL} from "./prologPage";
+
 const GlobalStyle = createGlobalStyle`
   @font-face {
     font-family: 'Cafe24ClassicType';
@@ -470,7 +472,7 @@ const saveBattleResult = async (hp: number) => {
       try {
         setBattlePhase('processing');
 
-        const res = await fetch("http://localhost:3000/voice", {
+        const res = await fetch(`${SERVER_URL}/voice`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
@@ -586,7 +588,7 @@ const handleScreenClick = () => {
         enemy: speakerConfig.teachers.name,
         hp: playerHp
       };
-      const result = await fetch("http://localhost:3000/attack", {
+      const result = await fetch(`${SERVER_URL}/attack`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(data)
