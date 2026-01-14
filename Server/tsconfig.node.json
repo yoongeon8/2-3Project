@@ -6,14 +6,14 @@
     "module": "ESNext",
     "moduleResolution": "node",
 
-    "rootDir": ".",
-    "outDir": "dist",
+    "rootDir": "./Server",
+    "outDir": "./Server/dist",
 
     "types": ["node"],
     "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist", "../vite.config.ts"]
+  "include": ["Server/**/*.ts"],
+  "exclude": ["node_modules", "Server/dist", "vite.config.ts"]
 }
