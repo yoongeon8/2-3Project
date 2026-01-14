@@ -6,24 +6,17 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DB_DIR =
-  process.env.NODE_ENV === "production"
-    ? path.resolve("/data")
-    : path.resolve(__dirname);
+const DB_DIR = path.join(__dirname);
+const DB_PATH = path.join(DB_DIR, "../game.db");
 
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+if (!fs.existsSync(DB_PATH)) {
+  fs.writeFileSync(DB_PATH, "");
 }
 
-const DB_PATH =
-  process.env.NODE_ENV === "production"
-    ? path.join(DB_DIR, "database.sqlite")
-    : path.join(DB_DIR, "database.sqlite");
-
 const db = new Database(DB_PATH);
-
 db.pragma("foreign_keys = ON");
 
+// 테이블 생성
 db.prepare(`
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
