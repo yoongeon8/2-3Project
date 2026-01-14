@@ -1,20 +1,16 @@
-import DataBase from "better-sqlite3";
 import fs from "fs";
 import path from "path";
+import DataBase from "better-sqlite3";
 
-const DB_DIR =
-  process.env.NODE_ENV === "production" ? "/data" : __dirname;
+const DB_DIR = path.join(__dirname, "data"); // serverFile/data
+if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+
 const DB_PATH = path.join(DB_DIR, "game.db");
 
-// production에서 디렉토리 없으면 생성
-if (process.env.NODE_ENV === "production" && !fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
-}
-
 const db = new DataBase(DB_PATH);
-
 db.pragma("foreign_keys = ON");
 
+// 테이블 생성 예시
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
