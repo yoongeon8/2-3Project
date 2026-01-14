@@ -3,6 +3,7 @@ import { GlobalStyle, Container, Wapper, TitleContainer } from "./StartPage";
 import {useState} from "react";
 import Pencil from "../assets/pen.svg";
 import { useNavigate } from "react-router-dom";
+import { SERVER_URL } from "../pages/prologPage";
 
 const Title = styled.h1`
     position: relative;
@@ -81,7 +82,7 @@ function LoginPage(){
             return;
         }
         try{
-            const res = await fetch("http://localhost:3000/auth", {
+            const res = await fetch(`${SERVER_URL}/auth`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
