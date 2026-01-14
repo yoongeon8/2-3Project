@@ -4,9 +4,12 @@ import {fileURLToPath} from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dbPath = path.join(__dirname, "../game.db");
+const DB_PATH =
+  process.env.NODE_ENV === "production"
+    ? "/data/database.sqlite"
+    : "./database.sqlite";
 
-const db = new DataBase(dbPath);
+const db = new DataBase(DB_PATH);
 
 db.pragma("foreign_keys = ON");
 

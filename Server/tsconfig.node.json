@@ -5,6 +5,7 @@
     "target": "ES2022",
     "lib": ["ES2022"],
     "module": "ESNext",
+    "outDir": "dist",
     "types": ["node"],
     "skipLibCheck": true,
 
@@ -23,5 +24,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["*.ts"]
 }

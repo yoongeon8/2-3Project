@@ -21,7 +21,7 @@ app.use(cors({
     "http://localhost:5173",
     "https://jdbbloloping2.netlify.app/"
   ],
-  Credentials: true
+  credentials: true
 }));
 
 interface UserRow {
