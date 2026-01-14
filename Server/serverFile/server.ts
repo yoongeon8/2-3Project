@@ -6,8 +6,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 
-import { createSpellJson, Enemy as EnemyData } from "./damage";
-import db from "./db";
+import { createSpellJson, Enemy as EnemyData } from "./damage.js";
+import db from "./db.js";
 
 const PORT = process.env.PORT || 3000;
 
