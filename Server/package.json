@@ -8,16 +8,16 @@
     "dev": "tsx server.ts"
   },
   "dependencies": {
+    "@types/node": "^25.0.8",
     "better-sqlite3": "^12.5.0",
     "cors": "^2.8.5",
     "express": "^5.2.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/express": "^5.0.6",
-    "@types/cors": "^2.8.17",
     "@types/better-sqlite3": "^7.6.13",
-    "typescript": "^5.9.3",
-    "tsx": "^4.21.0"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
