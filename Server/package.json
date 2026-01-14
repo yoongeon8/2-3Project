@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.node.json",
-    "start": "node dist/server.js",
-    "dev": "tsx server.ts"
+    "start": "node dist/serverFile/server.js",
+    "dev": "tsx serverFile/server.ts"
   },
   "dependencies": {
     "@types/node": "^25.0.8",
