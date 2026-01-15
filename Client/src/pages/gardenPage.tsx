@@ -211,7 +211,7 @@ const GardenPage = () => {
       return;
     }
     
-    if (isRecordingRef.current) return; // 이미 실행 중이면 무시
+    if (isRecordingRef.current) return;
     
     console.log("마이크 켜짐 - 음성인식 시작");
     isRecordingRef.current = true;
@@ -223,16 +223,13 @@ const handleMicClick = async (e: React.MouseEvent) => {
   e.stopPropagation();
   
     console.log("🎤 음성인식 중지 및 판정 시작");
-    
-    // 1. 음성 인식 중단
     stop();
 
-    // 2. 중요: transcript가 최종적으로 업데이트될 때까지 아주 잠시 대기 (약 300ms)
     setTimeout(async () => {
       // 3. 여기서의 transcript는 정지 후 최종 확정된 값입니다.
       if (!transcript) {
         const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
-        console.log("인식된 내용이 없습니다.");
+        console.log("인식된 내용이 없습니다 : ", transcript);
         setBattlePhase('idle');
         setBattleText(sebaschanDialogues);
         return;
@@ -280,7 +277,6 @@ const handleMicClick = async (e: React.MouseEvent) => {
 const handleScreenClick = () => {
   if (gameState !== 'playing') return;
 
-  // 1. 전투 중일 때의 클릭 로직
   if (battlePhase === 'idle' && isSpeak) {
     setBattleText(null);
     setBattlePhase('attack');
