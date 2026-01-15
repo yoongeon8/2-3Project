@@ -59,7 +59,7 @@ app.post("/voice", (req: Request, res: Response) => {
   }
 
   try {
-    if (finalScore >= 50 && volume >= 3) {
+    if (finalScore >= 50 && volume >= 1) {
       res.status(200).send("음성인식을 성공하였습니다.");
     } else {
       res.status(403).send("음성인식을 실패하였습니다.");
