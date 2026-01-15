@@ -218,61 +218,60 @@ const GardenPage = () => {
     start();
   }, [showMic]);
 
-// 마이크 버튼 클릭 핸들러
-const handleMicClick = async (e: React.MouseEvent) => {
-  e.stopPropagation();
-  
-    console.log("🎤 음성인식 중지 및 판정 시작");
-    stop();
+  const transcriptRef = useRef<string>("");
 
+  useEffect(() => {
+    if (transcript) {
+      transcriptRef.current = transcript;
+      console.log("🎤 최종 transcript 저장:", transcript);
+    }
+  }, [transcript]);
+
+  const handleMicClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  
+    console.log("🎤 음성 인식 종료");
+    stop();
+  
+    setBattlePhase('processing');
+  
     setTimeout(async () => {
-      // 3. 여기서의 transcript는 정지 후 최종 확정된 값입니다.
-      if (!transcript) {
-        const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
-        console.log("인식된 내용이 없습니다 : ", transcript);
+      const finalTranscript = transcriptRef.current;
+  
+      if (!finalTranscript) {
         setBattlePhase('idle');
-        setBattleText(sebaschanDialogues);
+        setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
         return;
       }
-
-      console.log("🎯 목표 주문:", targetSpell);
-      console.log("🎙 최종 인식된 주문:", transcript);
-
-      // 4. 서버 데이터 생성 및 전송
-      const sendData = createSpellJson(targetSpell, transcript, volume);
-      const data = {
-        target: targetSpell,
-        transcript: transcript,
-        volume: sendData.decibel
-      }
-
+  
+      const sendData = createSpellJson(targetSpell, finalTranscript, volume);
+  
       try {
-        setBattlePhase('processing'); // 중복 클릭 방지
-
         const res = await fetch(`${SERVER_URL}/voice`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
+          body: JSON.stringify({
+            target: targetSpell,
+            transcript: finalTranscript,
+            volume: sendData.decibel
+          })
         });
-        
-        if(res.ok){
-          console.log("주문 성공");
+  
+        if (res.ok) {
           setIsTransformed(true);
-          if(isSpeak){
-            setCurrentLine(prev => prev + 1);
-            setBattlePhase('intro');
-          }
-        }else{
-          console.log("주문 실패");
+          setCurrentLine(prev => prev + 1);
+          setBattlePhase('intro');
+        } else {
           setBattlePhase('idle');
           setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
         }
       } catch (err) {
-        console.error("❌ 서버 통신 실패:", err);
+        console.error(err);
         setBattlePhase('idle');
       }
-    }, 400); // 0.4초 정도 대기 후 전송
-};
+    }, 1000); // 🔥 최소 800~1000ms
+  };
+  
 
 const handleScreenClick = () => {
   if (gameState !== 'playing') return;
