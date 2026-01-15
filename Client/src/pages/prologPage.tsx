@@ -114,6 +114,13 @@ const PrologPage = () => {
     if(!currentDialogue) return null;
     const currentSpeaker = speakerConfig[currentDialogue.speaker];
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+          setStep(2);
+        }, 3000);
+        return () => clearTimeout(timer);
+      }, []);
+
     const handleScreenClick = () => {
         if(currentLine < dialogues.length - 1){
             setCurrentLine(prev => prev +1);
