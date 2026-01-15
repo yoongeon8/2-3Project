@@ -21,7 +21,7 @@ import {spells, failMic} from "../../../Server/src/tsFile/spells";
 import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
 import {createSpellJson} from "../../../Server/serverFile/damage";
-import { SERVER_URL } from './prologPage';
+import { SERVER_URL } from './gardenPage';
 
 const GlobalStyle = createGlobalStyle`
   @font-face {

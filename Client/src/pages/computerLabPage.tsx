@@ -23,7 +23,7 @@ import {useVolume} from "../tsFolder/audio";
 import {createSpellJson, Enemy} from "../../../Server/serverFile/damage";
 import { useNavigate } from 'react-router-dom';
 
-import {SERVER_URL} from "./prologPage";
+import {SERVER_URL} from "./gardenPage";
 
 const GlobalStyle = createGlobalStyle`
   @font-face {

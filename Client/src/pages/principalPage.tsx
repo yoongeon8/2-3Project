@@ -28,7 +28,7 @@ import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
 import {createSpellJson, Enemy} from "../../../Server/serverFile/damage";
 import { useNavigate } from 'react-router-dom';
-import { SERVER_URL } from './prologPage';
+import { SERVER_URL } from './gardenPage';
 
 // --- 스타일 정의 ---
 const GlobalStyle = createGlobalStyle`

@@ -3,7 +3,7 @@ import { GlobalStyle, Container, Wapper, TitleContainer } from "./StartPage";
 import {useState} from "react";
 import Pencil from "../assets/pen.svg";
 import { useNavigate } from "react-router-dom";
-import { SERVER_URL } from "../pages/prologPage";
+import { SERVER_URL } from "../pages/gardenPage";
 
 const Title = styled.h1`
     position: relative;
