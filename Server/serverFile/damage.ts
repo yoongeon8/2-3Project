@@ -51,10 +51,10 @@ function wordAccuracy(target: string, result: string): number {
 
     if(finalScore >= 50){
         firstJudge = "성공";
-        if(volume >= 10 && volume <= 30){
+        if(volume >= 3){
             secondJudge = "성공";
             damage = 15000;
-        }else if(volume >= 3 && volume <= 9){
+        }else if(volume >= 1 && volume <= 2){
             secondJudge = "미흡";
             damage = 10000;
         }
