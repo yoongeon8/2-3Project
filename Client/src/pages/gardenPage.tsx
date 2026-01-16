@@ -207,16 +207,16 @@ const GardenPage = () => {
 
   useEffect(() => {
     if (!showMic) {
+      stop();
       isRecordingRef.current = false;
-      return;
     }
-    
-    if (isRecordingRef.current) return;
-    
-    console.log("마이크 켜짐 - 음성인식 시작");
-    isRecordingRef.current = true;
-    start();
   }, [showMic]);
+
+  useEffect(() => {
+    console.log("🎧 listening:", listening);
+    console.log("📝 transcript:", transcript);
+  }, [listening, transcript]);
+  
 
 // 마이크 버튼 클릭 핸들러
 const handleMicClick = async (e: React.MouseEvent) => {
@@ -271,7 +271,7 @@ const handleMicClick = async (e: React.MouseEvent) => {
         console.error("❌ 서버 통신 실패:", err);
         setBattlePhase('idle');
       }
-    }, 400); // 0.4초 정도 대기 후 전송
+    }, 800); // 0.8초 정도 대기 후 전송
 };
 
 const handleScreenClick = () => {
