@@ -213,8 +213,10 @@ const GardenPage = () => {
   }, [showMic]);
 
   useEffect(() => {
-    console.log("🎧 listening:", listening);
-    console.log("📝 transcript:", transcript);
+    if(showMic){
+      console.log("🎧 listening:", listening);
+      console.log("📝 transcript:", transcript);
+    }
   }, [listening, transcript]);
   
 
@@ -278,6 +280,7 @@ const handleScreenClick = () => {
   if (gameState !== 'playing') return;
 
   if (battlePhase === 'idle' && isSpeak) {
+    start();
     setBattleText(null);
     setBattlePhase('attack');
     return; // 전투 중엔 대사 리스트를 멋대로 넘기지 않음
