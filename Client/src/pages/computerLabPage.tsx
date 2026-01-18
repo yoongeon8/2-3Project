@@ -371,15 +371,9 @@ const ComputerLabPage = () => {
 
   useEffect(() => {
     if (!showMic) {
+      stop();
       isRecordingRef.current = false;
-      return;
     }
-    
-    if (isRecordingRef.current) return; // 이미 실행 중이면 무시
-    
-    console.log("마이크 켜짐 - 음성인식 시작");
-    isRecordingRef.current = true;
-    start();
   }, [showMic]);
 
   useEffect(() => {

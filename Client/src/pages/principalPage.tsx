@@ -2,17 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { createGlobalStyle } from 'styled-components';
 
-// --- 이미지 Import (경로: ../assets) ---
-import background4 from '../assets/background4.png';      // 평소 교장실
-import background4_1 from '../assets/background4-1.png';  // 폭파된 교장실
+// --- background img
+import background4 from '../assets/background4.png';
+import background4_1 from '../assets/background4-1.png';
 
+//person img
 import playerImg from '../assets/player-start-1.png';
 import playerProfileImg from '../assets/player-start-profile.png';
-
-// 교장선생님 이미지
-import npc4_1 from '../assets/npc4-1.png'; // 평상시
-import npc4_2 from '../assets/npc4-2.png'; // 전투 태세
-import npc4_3 from '../assets/npc4-3.png'; // 데미지 입음
+import npc4_1 from '../assets/npc4-1.png'; // normal
+import npc4_2 from '../assets/npc4-2.png'; // fight
+import npc4_3 from '../assets/npc4-3.png'; // is demage
 
 // 프로필
 import npc_profile1 from '../assets/npc-profile1.png'; // 세바스찬
@@ -22,7 +21,7 @@ import npc_profile6 from '../assets/npc-profile6.png'; // 교장선생님
 import mic from '../assets/mic.png';
 import playerbattle1 from '../assets/player-change-1.png'; // 변신 후
 
-//기타 파일 import
+//function
 import {spells, failMic} from "../../../Server/src/tsFile/spells";
 import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
@@ -297,6 +296,8 @@ const PrincipalPage = () => {
   const { transcript, listening, start, stop } = useSpeechToText();
   const playerName = localStorage.getItem("player") ?? "미림이";
 
+  const EnemyData = Enemy;
+
   const [step, setStep] = useState(1);
   const [currentLine, setCurrentLine] = useState(0); // 대화 번호
   const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing'>('intro');
@@ -307,20 +308,6 @@ const PrincipalPage = () => {
   //상태 설정
   const [isTransformed, setIsTransformed] = useState(false);
   const [isExploded, setIsExploded] = useState(false);
-
-  // HP 설정
-  const PLAYER_MAX = 100000;
-  const ENEMY_MAX = 75000;
-
-  const [playerHp, setPlayerHp] = useState(PLAYER_MAX);
-  const [enemyHp, setEnemyHp] = useState(ENEMY_MAX);
-
-  const [isHit, setIsHit] = useState(false);
-
-  const playerHpPercent = (playerHp / PLAYER_MAX) * 100;
-  const enemyHpPercent = (enemyHp / ENEMY_MAX) * 100;
-
-  const playerAttackLines = spells;
 
   // 대사 데이터
   const dialogues: {
@@ -360,7 +347,21 @@ const PrincipalPage = () => {
     battle: { name: '', profile: null },
   }as const;
 
-  type SpeakerKey = keyof typeof speakerConfig
+  type SpeakerKey = keyof typeof speakerConfig;
+
+    // HP 설정
+    const PLAYER_MAX = 100000;
+    const ENEMY_MAX = EnemyData.find(enemy => enemy.name === speakerConfig.principal.name)?.hp ?? 75000;
+  
+    const [playerHp, setPlayerHp] = useState(PLAYER_MAX);
+    const [enemyHp, setEnemyHp] = useState(ENEMY_MAX);
+  
+    const [isHit, setIsHit] = useState(false);
+  
+    const playerHpPercent = (playerHp / PLAYER_MAX) * 100;
+    const enemyHpPercent = (enemyHp / ENEMY_MAX) * 100;
+  
+    const playerAttackLines = spells;
 
   const currentDialogue = dialogues[currentLine];
   const isSpeak = currentDialogue.situation === 'speak';
@@ -472,15 +473,9 @@ const saveBattleResult = async (hp: number) => {
 
   useEffect(() => {
     if (!showMic) {
+      stop();
       isRecordingRef.current = false;
-      return;
     }
-    
-    if (isRecordingRef.current) return; // 이미 실행 중이면 무시
-    
-    console.log("마이크 켜짐 - 음성인식 시작");
-    isRecordingRef.current = true;
-    start();
   }, [showMic]);
 
   const handleMicClick = async (e: React.MouseEvent) => {
@@ -572,7 +567,7 @@ const saveBattleResult = async (hp: number) => {
         if (currentEnemyHp > 0) {
           // 10% 확률로 강력한 공격
           const isHardAttack = Math.random() < 0.1;
-          const enemyDamage = isHardAttack ? 25000 : 20000; // 성래쌤 수치
+          const enemyDamage = isHardAttack ? 25000 : 20000;
           const attackType = isHardAttack ? "강력한 " : "";
           
           setPlayerHp(prev => Math.max(0, prev - enemyDamage));

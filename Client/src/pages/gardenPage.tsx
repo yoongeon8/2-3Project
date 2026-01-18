@@ -199,18 +199,15 @@ const GardenPage = () => {
 
   useEffect(() => {
     if (currentDialogue.situation === 'speak') {
-      setBattlePhase('attack');
+      setBattlePhase('idle');
     }
   }, [currentLine]);
 
-  const isRecordingRef = useRef(false);
+  const transcriptRef = useRef("");
 
   useEffect(() => {
-    if (!showMic) {
-      stop();
-      isRecordingRef.current = false;
-    }
-  }, [showMic]);
+    if (transcript) transcriptRef.current = transcript;
+  }, [transcript]);
 
   useEffect(() => {
     if(showMic){
@@ -227,24 +224,26 @@ const handleMicClick = async (e: React.MouseEvent) => {
     console.log("🎤 음성인식 중지 및 판정 시작");
     stop();
 
+    const finaltranscript = transcriptRef.current;
+
     setTimeout(async () => {
       // 3. 여기서의 transcript는 정지 후 최종 확정된 값입니다.
-      if (!transcript) {
+      if (!finaltranscript) {
         const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
-        console.log("인식된 내용이 없습니다 : ", transcript);
+        console.log("인식된 내용이 없습니다 : ", finaltranscript);
         setBattlePhase('idle');
         setBattleText(sebaschanDialogues);
         return;
       }
 
       console.log("🎯 목표 주문:", targetSpell);
-      console.log("🎙 최종 인식된 주문:", transcript);
+      console.log("🎙 최종 인식된 주문:", finaltranscript);
 
       // 4. 서버 데이터 생성 및 전송
-      const sendData = createSpellJson(targetSpell, transcript, volume);
+      const sendData = createSpellJson(targetSpell, finaltranscript, volume);
       const data = {
         target: targetSpell,
-        transcript: transcript,
+        transcript: finaltranscript,
         volume: sendData.decibel
       }
 
@@ -280,7 +279,9 @@ const handleScreenClick = () => {
   if (gameState !== 'playing') return;
 
   if (battlePhase === 'idle' && isSpeak) {
+    transcriptRef.current = "";
     start();
+    console.log("음성 인식 시작됨.");
     setBattleText(null);
     setBattlePhase('attack');
     return; // 전투 중엔 대사 리스트를 멋대로 넘기지 않음

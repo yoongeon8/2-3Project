@@ -158,9 +158,11 @@ const PrologPage = () => {
                         </ProfileWrapper>
                         )}
                         <MessageBox>
-                            <NameTag>
-                                {speakerConfig[currentDialogue.speaker].name}
-                            </NameTag>
+                            {!isSystem && (
+                                <NameTag>
+                                    {speakerConfig[currentDialogue.speaker].name}
+                                </NameTag>
+                            )}
                             <DialogueText $speak={false}>
                                 {currentDialogue.text}
                             </DialogueText>

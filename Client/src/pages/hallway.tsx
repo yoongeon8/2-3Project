@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled,{ keyframes } from 'styled-components';
+
+//img
 import background3 from '../assets/background3-1.png';
 import playerImg from '../assets/player-start-1.png';
 import playerProfileImg from '../assets/player-start-profile.png';
 import npc3_1 from '../assets/npc3-1.png';
-import npc2_2 from '../assets/npc2-2.png';
-import npc2_3 from '../assets/npc2-3.png';
-import npc1_2 from '../assets/npc1-2.png';
+import npc3_2 from '../assets/npc3-2.png';
+import npc3_3 from '../assets/npc3-3.png';
 import npc_profile1 from '../assets/npc-profile1.png';
 import npc_profile5 from '../assets/npc-profile5.png';
 import { createGlobalStyle } from 'styled-components';
@@ -17,6 +18,7 @@ import playerbattle2 from '../assets/player-change-2.png';
 import playerbattle3 from '../assets/player-change-3.png';
 import background3_2 from '../assets/background3-2.png'
 
+//function
 import {spells, failMic} from "../../../Server/src/tsFile/spells";
 import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
@@ -465,15 +467,9 @@ const pulse = keyframes`
 
     useEffect(() => {
       if (!showMic) {
+        stop();
         isRecordingRef.current = false;
-        return;
       }
-      
-      if (isRecordingRef.current) return; // 이미 실행 중이면 무시
-      
-      console.log("마이크 켜짐 - 음성인식 시작");
-      isRecordingRef.current = true;
-      start();
     }, [showMic]);
 
     const handleMicClick = async (e: React.MouseEvent) => {
@@ -666,6 +662,13 @@ const pulse = keyframes`
       }
     };
 
+    let displayNpc = npc3_1;
+    if (isHit) {
+      displayNpc = npc3_3; // 피격 시
+    } else if (isBattle) {
+      displayNpc = npc3_2; // 전투 중
+    }
+
     return (
       <Container $bg={currentBg} onClick={handleNextDialogue}>
         <GlobalStyle />
@@ -734,7 +737,7 @@ const pulse = keyframes`
               alt="Player"
             />
             <NpcCharacter2 
-              src={npc3_1} 
+              src={displayNpc}
               alt="NPC"
             />
 
