@@ -1,26 +1,34 @@
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
-export const useSpeechToText = () => {
+export const useSpeechToText = (
+  onEnd?: (finalTranscript: string) => void
+) => {
     const {
       transcript,
       listening,
       browserSupportsSpeechRecognition,
       resetTranscript
     } = useSpeechRecognition();
+
+    const recognition = SpeechRecognition.getRecognition();
   
     const start = () => {
-      if (!browserSupportsSpeechRecognition) return;
+      if (!browserSupportsSpeechRecognition || !recognition) return;
       resetTranscript();
-        SpeechRecognition.startListening({
-          language: "ko-KR",
-          continuous: false,
-          interimResults: false
-      });
+      recognition.lang = "ko-KR";
+      recognition.continuous = false;
+      recognition.interimResults = false;
     };
   
     const stop = () => {
-      SpeechRecognition.stopListening();
+      recognition?.stop();
     };
+
+    if(recognition && onEnd){
+      recognition.onend = () => {
+        onEnd(transcript.trim());
+      }
+    }
   
     return {
       transcript,
