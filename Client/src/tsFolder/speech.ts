@@ -1,48 +1,56 @@
-import SpeechRecognition, {
-  useSpeechRecognition
-} from "react-speech-recognition";
+import { useEffect, useRef, useState } from "react";
 
-export const useSpeechToText = (
-  onEnd?: (finalTranscript: string) => void
-) => {
-  const {
-    transcript,
-    listening,
-    browserSupportsSpeechRecognition,
-    resetTranscript
-  } = useSpeechRecognition();
+type SpeechEndCallback = (finalTranscript: string) => void;
+
+export const useSpeechToText = (onSpeechEnd: SpeechEndCallback) => {
+  const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef("");
+  const [listening, setListening] = useState(false);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.error("SpeechRecognition not supported");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "ko-KR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event: any) => {
+      let text = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        text += event.results[i][0].transcript;
+      }
+      transcriptRef.current = text;
+    };
+
+    recognition.onend = () => {
+      console.log("🎤 recognition.onend");
+      setListening(false);
+      onSpeechEnd(transcriptRef.current.trim());
+      transcriptRef.current = "";
+    };
+
+    recognitionRef.current = recognition;
+  }, [onSpeechEnd]);
 
   const start = () => {
-    if (!browserSupportsSpeechRecognition) return;
-
-    resetTranscript();
-
-    SpeechRecognition.startListening({
-      language: "ko-KR",
-      continuous: true,
-      interimResults: false
-    });
-
-    // 🔥 중요: start 이후에 recognition을 다시 잡는다
-    const recognition = SpeechRecognition.getRecognition();
-
-    if (recognition && onEnd) {
-      recognition.onend = () => {
-        console.log("🎤 음성 인식 종료됨");
-        onEnd(transcript.trim());
-      };
-    }
+    if (!recognitionRef.current || listening) return;
+    transcriptRef.current = "";
+    recognitionRef.current.start();
+    setListening(true);
   };
 
   const stop = () => {
-    console.log("🛑 stop() 호출");
-    SpeechRecognition.stopListening();
+    if (!recognitionRef.current || !listening) return;
+    recognitionRef.current.stop(); // → onend 호출됨
   };
 
-  return {
-    transcript,
-    listening,
-    start,
-    stop
-  };
+  return { listening, start, stop };
 };
