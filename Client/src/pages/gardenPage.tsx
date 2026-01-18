@@ -224,9 +224,8 @@ const handleMicClick = async (e: React.MouseEvent) => {
     console.log("🎤 음성인식 중지 및 판정 시작");
     stop();
 
-    const finaltranscript = transcriptRef.current;
-
     setTimeout(async () => {
+      const finaltranscript = transcriptRef.current;
       // 3. 여기서의 transcript는 정지 후 최종 확정된 값입니다.
       if (!finaltranscript) {
         const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
