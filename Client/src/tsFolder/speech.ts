@@ -1,56 +1,46 @@
-import { useEffect, useRef, useState } from "react";
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
-type SpeechEndCallback = (finalTranscript: string) => void;
-
-export const useSpeechToText = (onSpeechEnd: SpeechEndCallback) => {
-  const recognitionRef = useRef<any>(null);
-  const transcriptRef = useRef("");
-  const [listening, setListening] = useState(false);
-
-  useEffect(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      console.error("SpeechRecognition not supported");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "ko-KR";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onresult = (event: any) => {
-      let text = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        text += event.results[i][0].transcript;
+export const useSpeechToText = () => {
+    const {
+      transcript,
+      listening,
+      browserSupportsSpeechRecognition,
+      resetTranscript
+    } = useSpeechRecognition();
+  
+    const start = () => {
+      if (!browserSupportsSpeechRecognition){
+        console.error("브라우저가 음성 인식을 지원하지 않습니다.");
+        alert("이 브라우저는 음성인식을 지원하지 않습니다. chrome을 이용해주세요!!");
+        return;
       }
-      transcriptRef.current = text;
+      resetTranscript();
+      try{
+        SpeechRecognition.startListening({
+          language: "ko-KR",
+          continuous: false,
+          interimResults: false
+        });
+        console.log("음성 인식 시작함!");
+      } catch(err){
+        console.error("음성 인식 실패함.", err);
+      }
     };
-
-    recognition.onend = () => {
-      console.log("🎤 recognition.onend");
-      setListening(false);
-      onSpeechEnd(transcriptRef.current.trim());
-      transcriptRef.current = "";
+  
+    const stop = () => {
+      try{
+        SpeechRecognition.stopListening();
+        console.log("음성 인식 중지함!");
+      } catch(err){
+        console.error("음성 인식 실패!", err);
+      }
     };
-
-    recognitionRef.current = recognition;
-  }, [onSpeechEnd]);
-
-  const start = () => {
-    if (!recognitionRef.current || listening) return;
-    transcriptRef.current = "";
-    recognitionRef.current.start();
-    setListening(true);
+  
+    return {
+      transcript,
+      listening,
+      browserSupportsSpeechRecognition,
+      start,
+      stop
+    };
   };
-
-  const stop = () => {
-    if (!recognitionRef.current || !listening) return;
-    recognitionRef.current.stop(); // → onend 호출됨
-  };
-
-  return { listening, start, stop };
-};

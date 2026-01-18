@@ -8,7 +8,13 @@ export const useVolume = (active: boolean) => {
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active){
+      streamRef.current?.getTracks().forEach(trank => trank.stop());
+      audioContextRef.current?.close();
+      streamRef.current = null;
+      audioContextRef.current = null;
+      return;
+    }
 
     let analyser: AnalyserNode;
     let dataArray: Uint8Array;

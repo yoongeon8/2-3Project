@@ -144,214 +144,200 @@ const PulseRing = styled.div`
 const GardenPage = () => {
   const navigate = useNavigate();
 
+  const { transcript, listening, start, stop } = useSpeechToText();
+
   const [step, setStep] = useState(1);
   const [currentLine, setCurrentLine] = useState(0);
-  const [battlePhase, setBattlePhase] = useState<"intro" | "idle" | "attack" | "processing">("intro");
-  const [targetSpell] = useState("치링치링 샤랄라 나날이 예뻐지는 나 너무나도 소중해");
-  const [gameState] = useState<"playing" | "victory_end" | "defeat_end">("playing");
+  const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing'>('intro');
+  const [targetSpell, setTargetSpell] = useState("치링치링 샤랄라 나날이 예뻐지는 나 너무나도 소중해"); //스펠
+  const [gameState, setGameState] = useState<'playing' | 'victory_end' | 'defeat_end'>('playing'); //게임 변화 상태
   const [battleText, setBattleText] = useState<string | null>(null);
   const [isTransformed, setIsTransformed] = useState(false);
-  const [currentNpcImage] = useState( () => Math.random() < 0.5 ? npc1_1 : npc1_2 );
+  const [currentNpcImage, setCurrentNpcImage] = useState(() => Math.random() < 0.5 ? npc1_1 : npc1_2);
 
-  const dialogues = [
-    { speaker: "player", situation: "story", text: "학교가 사라지면 내가 좀 편해질까?" },
-    { speaker: "sebaschan", situation: "story", text: "내가 도와줄까?" },
-    { speaker: "player", situation: "story", text: "세바스찬? 말을 하는 세바스찬?" },
-    {
-      speaker: "sebaschan",
-      situation: "story",
-      text: "나는 세바스찬. 너의 말을 듣고 너를 도와주기 위해서 나타났어."
-    },
-    {
-      speaker: "player",
-      situation: "story",
-      text: "왜? 뭔가 수호령 같은 존재 아니었어? 왜 날 도와주려는 거야?"
-    },
-    {
-      speaker: "sebaschan",
-      situation: "story",
-      text:
-        "아니. 난 지금 학교에 불만이 많아. 왜냐하면 내 형제들이 맨날 미림의 부실한 관리로 인해서 왜가리들에게 먹혔다고..!"
-    },
-    {
-      speaker: "sebaschan",
-      situation: "story",
-      text: "난 그런 학교를 용서 할 수 없어. 너를 도와줄게."
-    },
-    {
-      speaker: "sebaschan",
-      situation: "story",
-      text:
-        "자 이건 선물이야. 이걸 이용하면 학교를 폭파시키는데 도움이 될 거야. 마법소녀로 변신할 수 있어."
-    },
-    { speaker: "player", situation: "story", text: "마법소녀? 그 애니에서만 나오던 거??" },
-    {
-      speaker: "sebaschan",
-      situation: "story",
-      text:
-        "변신 주문은 “치링치링 샤랄라 나날이 예뻐지는 나. 너무나도 소중해”라고 마법봉을 들고 외치면 돼!"
-    },
-    {
-      speaker: "player",
-      situation: "speak",
-      text: "치링치링 샤랄라 나날이 예뻐지는 나. 너무나도 소중해"
-    },
-    { speaker: "player", situation: "story", text: "뭐야 교복에서 빛이 나잖아!" },
-    {
-      speaker: "sebaschan",
-      situation: "story",
-      text: "맞아. 이제 넌 마법소녀의 힘을 얻었어. 이 힘으로 학교를 폭파 시키자!"
-    },
-    { speaker: "player", situation: "story", text: "알겠어! 가보자!" }
-  ] as const;
+
+  const dialogues: { speaker: SpeakerKey; situation: string; text: string; }[] = [
+    { speaker: 'player', situation: 'story', text: '학교가 사라지면 내가 좀 편해질까?' },
+    { speaker: 'sebaschan', situation: 'story', text: '내가 도와줄까?' },
+    { speaker: 'player', situation: 'story', text: '세바스찬? 말을 하는 세바스찬?' },
+    { speaker: 'sebaschan', situation: 'story', text: '나는 세바스찬. 너의 말을 듣고 너를 도와주기 위해서 나타났어.' },
+    { speaker: 'player', situation: 'story', text: '왜? 뭔가 수호령 같은 존재 아니었어? 왜 날 도와주려는 거야?' },
+    { speaker: 'sebaschan', situation: 'story', text: '아니. 난 지금 학교에 불만이 많아. 왜냐하면 내 형제들이 맨날 미림의 부실한 관리로 인해서 왜가리들에게 먹혔다고..!' },
+    { speaker: 'sebaschan', situation: 'story', text: '난 그런 학교를 용서 할 수 없어. 너를 도와줄게.' },
+    { speaker: 'sebaschan', situation: 'story', text: '자 이건 선물이야. 이걸 이용하면 학교를 폭파시키는데 도움이 될 거야. 마법소녀로 변신할 수 있어.' }, 
+    { speaker: 'player', situation: 'story', text: '마법소녀? 그 애니에서만 나오던 거??' },
+    { speaker: 'sebaschan', situation: 'story', text: '변신 주문은 “치링치링 샤랄라 나날이 예뻐지는 나. 너무나도 소중해”라고 마법봉을 들고 외치면 돼!' },
+    { speaker: 'player', situation: 'speak', text: '치링치링 샤랄라 나날이 예뻐지는 나. 너무나도 소중해' }, 
+    { speaker: 'player', situation: 'story', text: '뭐야 교복에서 빛이 나잖아!' },
+    { speaker: 'sebaschan', situation: 'story', text: '맞아. 이제 넌 마법소녀의 힘을 얻었어. 이 힘으로 학교를 폭파 시키자!' },
+    { speaker: 'player', situation: 'story', text: '알겠어! 가보자!' },
+  ];
 
   const speakerConfig = {
     player: { name: "미림이", profile: playerProfileImg },
-    sebaschan: { name: "세바스찬", profile: npc_profile1 }
-  } as const;
+    sebaschan: { name: '세바스찬', profile: npc_profile1 },
+  }as const;
 
-  type SpeakerKey = keyof typeof speakerConfig;
+  type SpeakerKey = keyof typeof speakerConfig; 
 
   const currentDialogue = dialogues[currentLine];
+  const isSpeak = currentDialogue.situation === 'speak';
+  const showMic = isSpeak && battlePhase === 'attack';
+  const showDialogueBox = true;
+
+  const volume = useVolume(showMic && listening);
+
   if (!currentDialogue) return null;
+  const currentSpeaker = speakerConfig[currentDialogue.speaker];
 
-  const isSpeak = currentDialogue.situation === "speak";
-  const showMic = isSpeak && battlePhase === "attack";
-
-  const volume = useVolume(showMic);
-
-  // ---------------- 🎤 음성 종료 시 판정 ----------------
-  const onSpeechEnd = (finalTranscript: string) => {
-    console.log("🎤 음성 인식 종료");
-    console.log("🎙 최종 transcript:", finalTranscript);
-
-    if (!finalTranscript) {
-      setBattlePhase("idle");
-      setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
-      return;
-    }
-
-    const sendData = createSpellJson(targetSpell, finalTranscript, volume);
-
-    setBattlePhase("processing");
-
-    fetch(`${SERVER_URL}/voice`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        target: targetSpell,
-        transcript: finalTranscript,
-        volume: sendData.decibel
-      })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error();
-        setIsTransformed(true);
-        setCurrentLine(prev => prev + 1);
-        setBattlePhase("intro");
-      })
-      .catch(() => {
-        setBattlePhase("idle");
-        setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
-      });
-  };
-
-  const { listening, start, stop } = useSpeechToText(onSpeechEnd);
-
-  // ---------------- 최초 연출 ----------------
   useEffect(() => {
-    const timer = setTimeout(() => setStep(2), 3000);
+    const timer = setTimeout(() => {
+      setStep(2);
+    }, 3000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (currentDialogue.situation === "speak") {
-      setBattlePhase("idle");
+    if (currentDialogue.situation === 'speak') {
+      setBattlePhase('idle');
     }
   }, [currentLine]);
 
-  // ---------------- 핸들러 ----------------
-  const handleMicClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!listening) return;
-    console.log("🎤 마이크 버튼 클릭 → 종료");
+  const transcriptRef = useRef("");
+
+  useEffect(() => {
+    if (transcript) transcriptRef.current = transcript;
+  }, [transcript]);
+
+  useEffect(() => {
+    if(showMic){
+      console.log("🎧 listening:", listening);
+      console.log("📝 transcript:", transcript);
+    }
+  }, [listening, transcript]);
+  
+
+// 마이크 버튼 클릭 핸들러
+const handleMicClick = async (e: React.MouseEvent) => {
+  e.stopPropagation();
+  
+    console.log("🎤 음성인식 중지 및 판정 시작");
     stop();
-  };
 
-  const handleScreenClick = () => {
-    if (gameState !== "playing") return;
+    setTimeout(async () => {
+          const finaltranscript = transcriptRef.current;
+      // 3. 여기서의 transcript는 정지 후 최종 확정된 값입니다.
+      if (!finaltranscript) {
+        const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
+        console.log("인식된 내용이 없습니다 : ", finaltranscript);
+        setBattlePhase('idle');
+        setBattleText(sebaschanDialogues);
+        return;
+      }
 
-    if (battlePhase === "idle" && isSpeak) {
-      start();
-      setBattleText(null);
-      setBattlePhase("attack");
-      console.log("음성 인식 시작됨.");
-      return;
-    }
+      console.log("🎯 목표 주문:", targetSpell);
+      console.log("🎙 최종 인식된 주문:", finaltranscript);
 
-    if (battlePhase === "attack" || battlePhase === "processing") return;
+      // 4. 서버 데이터 생성 및 전송
+      const sendData = createSpellJson(targetSpell, finaltranscript, volume);
+      const data = {
+        target: targetSpell,
+        transcript: finaltranscript,
+        volume: sendData.decibel
+      }
 
-    if (currentLine < dialogues.length - 1) {
-      setCurrentLine(prev => prev + 1);
-    } else {
-      navigate("/computer");
-    }
-  };
+      try {
+        setBattlePhase('processing'); // 중복 클릭 방지
 
-  // ---------------- 렌더 ----------------
+        const res = await fetch(`${SERVER_URL}/voice`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        
+        if(res.ok){
+          console.log("주문 성공");
+          setIsTransformed(true);
+          if(isSpeak){
+            setCurrentLine(prev => prev + 1);
+            setBattlePhase('intro');
+          }
+        }else{
+          console.log("주문 실패");
+          setBattlePhase('idle');
+          setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
+        }
+      } catch (err) {
+        console.error("❌ 서버 통신 실패:", err);
+        setBattlePhase('idle');
+      }
+    }, 1000);
+};
+
+const handleScreenClick = () => {
+  if (gameState !== 'playing') return;
+
+  if (battlePhase === 'idle' && isSpeak) {
+    transcriptRef.current = "";
+    start();
+    console.log("음성 인식 시작됨.");
+    setBattleText(null);
+    setBattlePhase('attack');
+    return; // 전투 중엔 대사 리스트를 멋대로 넘기지 않음
+  }
+
+  if(battlePhase === 'attack' || battlePhase === 'processing') return;
+
+  // 2. 일반 대화 넘기기
+  if (currentLine < dialogues.length - 1) {
+    setCurrentLine(prev => prev + 1);
+  }else{
+    navigate('/computer');
+  }
+};
+
   return (
     <Container $bg={background1} onClick={handleScreenClick}>
       <GlobalStyle />
-
       {showMic && <SpeakOverlay />}
       {showMic && (
         <SpeakMicWrapper onClick={handleMicClick}>
           <PulseRing />
-          <MicCircle>
-            <MicImage src={mic} alt="mic" />
-          </MicCircle>
+          <MicCircle><MicImage src={mic} alt="mic" /></MicCircle>
         </SpeakMicWrapper>
       )}
 
       {step === 1 && (
-        <IntroOverlay>
-          <IntroText>점심시간 정원 앞</IntroText>
-        </IntroOverlay>
+        <IntroOverlay><IntroText>점심시간 정원 앞</IntroText></IntroOverlay>
       )}
 
       {step === 2 && (
         <>
           <StandingCharacter
             src={isTransformed ? player_change_1 : playerImg}
+            alt="Character"
           />
-          <NpcCharacter2 src={currentNpcImage} />
+          <NpcCharacter2 src={currentNpcImage} alt="Character"/>
 
+          {/* ✨ 중앙에 마법봉 표시 (선물 대사부터 주문 외우기 전까지) */}
           {currentLine >= 7 && currentLine < 10 && (
-            <ItemOverlay src={magic_stick} />
+            <ItemOverlay src={magic_stick} alt="magic stick" />
           )}
 
           <DialogueSection>
             <ProfileWrapper>
               <ProfileInner>
-                <ProfileImage
-                  src={
-                    battleText
-                      ? speakerConfig.sebaschan.profile
-                      : speakerConfig[currentDialogue.speaker as SpeakerKey]
-                          .profile
-                  }
-                />
+                <ProfileImage 
+                  src={battleText ? speakerConfig.sebaschan.profile : speakerConfig[currentDialogue.speaker].profile} 
+                  alt="Profile" />
               </ProfileInner>
             </ProfileWrapper>
-
             <MessageBox>
               <NameTag>
-                {battleText
-                  ? speakerConfig.sebaschan.name
-                  : speakerConfig[currentDialogue.speaker as SpeakerKey].name}
+              {battleText ? speakerConfig.sebaschan.name : speakerConfig[currentDialogue.speaker].name}
               </NameTag>
               <DialogueText $speak={showMic}>
-                {battleText ?? currentDialogue.text}
+              {!battleText ? currentDialogue.text : battleText}
               </DialogueText>
             </MessageBox>
           </DialogueSection>
