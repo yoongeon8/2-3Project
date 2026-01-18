@@ -272,7 +272,7 @@ const handleMicClick = async (e: React.MouseEvent) => {
         console.error("❌ 서버 통신 실패:", err);
         setBattlePhase('idle');
       }
-    }, 800); // 0.8초 정도 대기 후 전송
+    }, 1000);
 };
 
 const handleScreenClick = () => {
