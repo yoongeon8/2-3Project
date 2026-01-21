@@ -184,6 +184,7 @@ const GardenPage = () => {
   const isSpeak = currentDialogue.situation === 'speak';
   const showMic = isSpeak && battlePhase === 'attack';
   const showDialogueBox = true;
+  const [isRecording, setIsRecording] = useState(false);
 
   const volume = useVolume(showMic && listening);
 
@@ -215,75 +216,91 @@ const GardenPage = () => {
       console.log("📝 transcript:", transcript);
     }
   }, [listening, transcript]);
+
+  useEffect(() => {
+    if(!listening && isRecording){
+      console.log("음성 인식 자동 종료됨.");
+      handleVoiceEnd();
+    }
+  }, [listening, isRecording]);
+
+  const handleVoiceEnd = async () => {
+    setIsRecording(false);
+    const finaltranscript =transcriptRef.current;
+
+    if(!finaltranscript){
+      const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
+      console.log('인식된 내용이 없습니다.', finaltranscript);
+      setBattlePhase('idle');
+      setBattleText(sebaschanDialogues);
+      return;
+    }
+
+    console.log("목표 주문", targetSpell);
+    console.log("최종 인식된 주문", finaltranscript);
+
+    const sendData = createSpellJson(targetSpell, finaltranscript, volume);
+    const data = {
+      target: targetSpell,
+      transcript: finaltranscript,
+      volume: sendData.decibel
+    };
+
+    try{
+      setBattlePhase('processing');
+
+      const res = await fetch(`${SERVER_URL}/voice`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      });
+
+      if(res.ok){
+        console.log("주문 성공");
+        setIsTransformed(true);
+        if(isSpeak){
+          setCurrentLine(prev => prev + 1);
+          setBattlePhase('intro');
+        }
+      }else{
+        console.log("주문 실패");
+        setBattlePhase('idle');
+        setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
+      }
+    } catch(err){
+      console.error("서버 통신 실패", err);
+      setBattlePhase('idle');
+    }
+  }
   
 
 // 마이크 버튼 클릭 핸들러
 const handleMicClick = async (e: React.MouseEvent) => {
   e.stopPropagation();
+
+  if(listening){
+    console.log("수동으로 음성인식 중지");
+    stop();
+    return;
+  }
+
+  console.log("음성 인식 시작");
+  transcriptRef.current = "";
+  setIsRecording(true);
+  start();
   
     console.log("🎤 음성인식 중지 및 판정 시작");
-    stop();
-
-    setTimeout(async () => {
-          const finaltranscript = transcriptRef.current;
-      // 3. 여기서의 transcript는 정지 후 최종 확정된 값입니다.
-      if (!finaltranscript) {
-        const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
-        console.log("인식된 내용이 없습니다 : ", finaltranscript);
-        setBattlePhase('idle');
-        setBattleText(sebaschanDialogues);
-        return;
-      }
-
-      console.log("🎯 목표 주문:", targetSpell);
-      console.log("🎙 최종 인식된 주문:", finaltranscript);
-
-      // 4. 서버 데이터 생성 및 전송
-      const sendData = createSpellJson(targetSpell, finaltranscript, volume);
-      const data = {
-        target: targetSpell,
-        transcript: finaltranscript,
-        volume: sendData.decibel
-      }
-
-      try {
-        setBattlePhase('processing'); // 중복 클릭 방지
-
-        const res = await fetch(`${SERVER_URL}/voice`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-        
-        if(res.ok){
-          console.log("주문 성공");
-          setIsTransformed(true);
-          if(isSpeak){
-            setCurrentLine(prev => prev + 1);
-            setBattlePhase('intro');
-          }
-        }else{
-          console.log("주문 실패");
-          setBattlePhase('idle');
-          setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
-        }
-      } catch (err) {
-        console.error("❌ 서버 통신 실패:", err);
-        setBattlePhase('idle');
-      }
-    }, 1000);
+    start();
 };
 
 const handleScreenClick = () => {
   if (gameState !== 'playing') return;
 
   if (battlePhase === 'idle' && isSpeak) {
-    transcriptRef.current = "";
-    start();
-    console.log("음성 인식 시작됨.");
+    console.log("마이크 UI 표시");
     setBattleText(null);
     setBattlePhase('attack');
-    return; // 전투 중엔 대사 리스트를 멋대로 넘기지 않음
+    return;
   }
 
   if(battlePhase === 'attack' || battlePhase === 'processing') return;
