@@ -226,6 +226,7 @@ const GardenPage = () => {
 
   const handleVoiceEnd = async () => {
     setIsRecording(false);
+    
     const finaltranscript =transcriptRef.current;
 
     if(!finaltranscript){
@@ -239,20 +240,22 @@ const GardenPage = () => {
     console.log("목표 주문", targetSpell);
     console.log("최종 인식된 주문", finaltranscript);
 
-    const sendData = createSpellJson(targetSpell, finaltranscript, volume);
-    const data = {
-      target: targetSpell,
-      transcript: finaltranscript,
-      volume: sendData.decibel
-    };
-
+    const sendData = createSpellJson(
+      targetSpell,
+      finaltranscript,
+      volume
+    );
     try{
       setBattlePhase('processing');
 
       const res = await fetch(`${SERVER_URL}/voice`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          target: targetSpell,
+          transcript: finaltranscript,
+          volume: sendData.decibel,
+        }),
       });
 
       if(res.ok){
@@ -263,15 +266,14 @@ const GardenPage = () => {
           setBattlePhase('intro');
         }
       }else{
-        console.log("주문 실패");
-        setBattlePhase('idle');
-        setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
+        throw new Error("주문 실패!");
       }
     } catch(err){
       console.error("서버 통신 실패", err);
       setBattlePhase('idle');
+      setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
     }
-  }
+  };
   
 
 // 마이크 버튼 클릭 핸들러
@@ -288,9 +290,6 @@ const handleMicClick = async (e: React.MouseEvent) => {
   transcriptRef.current = "";
   setIsRecording(true);
   start();
-  
-    console.log("🎤 음성인식 중지 및 판정 시작");
-    start();
 };
 
 const handleScreenClick = () => {
