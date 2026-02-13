@@ -280,16 +280,13 @@ const GardenPage = () => {
 const handleMicClick = async (e: React.MouseEvent) => {
   e.stopPropagation();
 
-  if(listening){
-    console.log("수동으로 음성인식 중지");
-    stop();
-    return;
-  }
-
-  console.log("음성 인식 시작");
-  transcriptRef.current = "";
-  setIsRecording(true);
-  start();
+  // if(listening){
+  //   console.log("수동으로 음성인식 중지");
+  //   stop();
+  //   return;
+  // }
+  console.log("음성 인식 중지");
+  stop();
 };
 
 const handleScreenClick = () => {
@@ -299,6 +296,9 @@ const handleScreenClick = () => {
     console.log("마이크 UI 표시");
     setBattleText(null);
     setBattlePhase('attack');
+    transcriptRef.current = "";
+    setIsRecording(true);
+    start();
     return;
   }
 
