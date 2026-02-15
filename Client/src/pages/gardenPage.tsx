@@ -279,14 +279,9 @@ const GardenPage = () => {
 // 마이크 버튼 클릭 핸들러
 const handleMicClick = async (e: React.MouseEvent) => {
   e.stopPropagation();
-
-  // if(listening){
-  //   console.log("수동으로 음성인식 중지");
-  //   stop();
-  //   return;
-  // }
   console.log("음성 인식 중지");
   stop();
+  return;
 };
 
 const handleScreenClick = () => {
@@ -299,7 +294,6 @@ const handleScreenClick = () => {
     transcriptRef.current = "";
     setIsRecording(true);
     start();
-    return;
   }
 
   if(battlePhase === 'attack' || battlePhase === 'processing') return;
