@@ -144,17 +144,15 @@ const PulseRing = styled.div`
 const GardenPage = () => {
   const navigate = useNavigate();
 
-  const { transcript, listening, start, stop } = useSpeechToText();
-
-  const [step, setStep] = useState(1);
-  const [currentLine, setCurrentLine] = useState(0);
-  const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing'>('intro');
+  const { transcript, listening, start, stop } = useSpeechToText(); // useSpeechToText 함수 변수
+  const [step, setStep] = useState(1); // 
+  const [currentLine, setCurrentLine] = useState(0); //
+  const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing'>('intro'); //
   const [targetSpell, setTargetSpell] = useState("치링치링 샤랄라 나날이 예뻐지는 나 너무나도 소중해"); //스펠
   const [gameState, setGameState] = useState<'playing' | 'victory_end' | 'defeat_end'>('playing'); //게임 변화 상태
-  const [battleText, setBattleText] = useState<string | null>(null);
-  const [isTransformed, setIsTransformed] = useState(false);
-  const [currentNpcImage, setCurrentNpcImage] = useState(() => Math.random() < 0.5 ? npc1_1 : npc1_2);
-
+  const [battleText, setBattleText] = useState<string | null>(null); //
+  const [isTransformed, setIsTransformed] = useState(false); //
+  const [currentNpcImage, setCurrentNpcImage] = useState(() => Math.random() < 0.5 ? npc1_1 : npc1_2); // 
 
   const dialogues: { speaker: SpeakerKey; situation: string; text: string; }[] = [
     { speaker: 'player', situation: 'story', text: '학교가 사라지면 내가 좀 편해질까?' },
@@ -178,18 +176,16 @@ const GardenPage = () => {
     sebaschan: { name: '세바스찬', profile: npc_profile1 },
   }as const;
 
-  type SpeakerKey = keyof typeof speakerConfig; 
+  type SpeakerKey = keyof typeof speakerConfig;
 
   const currentDialogue = dialogues[currentLine];
   const isSpeak = currentDialogue.situation === 'speak';
   const showMic = isSpeak && battlePhase === 'attack';
-  const showDialogueBox = true;
   const [isRecording, setIsRecording] = useState(false);
 
   const volume = useVolume(showMic && listening);
 
   if (!currentDialogue) return null;
-  const currentSpeaker = speakerConfig[currentDialogue.speaker];
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -212,22 +208,28 @@ const GardenPage = () => {
 
   useEffect(() => {
     if(showMic){
+      setBattleText(null);
+      transcriptRef.current = "";
+      setBattlePhase('attack');
+      setIsRecording(true);
+      start();
       console.log("🎧 listening:", listening);
       console.log("📝 transcript:", transcript);
     }
   }, [listening, transcript]);
 
   useEffect(() => {
-    if(!listening && isRecording){
+    if(!listening && isRecording){ 
       console.log("음성 인식 자동 종료됨.");
       handleVoiceEnd();
     }
   }, [listening, isRecording]);
 
+
   const handleVoiceEnd = async () => {
     setIsRecording(false);
     
-    const finaltranscript =transcriptRef.current;
+    const finaltranscript = transcriptRef.current;
 
     if(!finaltranscript){
       const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
@@ -284,21 +286,18 @@ const handleMicClick = async (e: React.MouseEvent) => {
   return;
 };
 
+// 대사 화면 넘기기
 const handleScreenClick = () => {
   if (gameState !== 'playing') return;
 
   if (battlePhase === 'idle' && isSpeak) {
     console.log("마이크 UI 표시");
-    setBattleText(null);
-    setBattlePhase('attack');
-    transcriptRef.current = "";
-    setIsRecording(true);
-    start();
   }
 
+  // 공격 프로세싱 넘기기
   if(battlePhase === 'attack' || battlePhase === 'processing') return;
 
-  // 2. 일반 대화 넘기기
+  // 일반 대화 넘기기
   if (currentLine < dialogues.length - 1) {
     setCurrentLine(prev => prev + 1);
   }else{

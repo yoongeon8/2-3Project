@@ -448,8 +448,6 @@ const pulse = keyframes`
 
     if (!currentDialogue) return null;
 
-    const currentSpeaker = speakerConfig[currentDialogue.speaker];
-
     useEffect(() => {
       const timer = setTimeout(() => {
         setStep(2);
