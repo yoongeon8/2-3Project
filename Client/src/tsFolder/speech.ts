@@ -19,13 +19,13 @@ export const useSpeechToText = () => {
     SpeechRecognition.startListening({
       language: "ko-KR",
       continuous: true,
-      interimResults: false
+      interimResults: true
     });
   };
 
-  const stop = () => {
+  const stop = async () => {
     if (!listening) return;
-    SpeechRecognition.stopListening();
+    await SpeechRecognition.stopListening();
   };
 
   return {

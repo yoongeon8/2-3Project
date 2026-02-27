@@ -144,10 +144,10 @@ const PulseRing = styled.div`
 const GardenPage = () => {
   const navigate = useNavigate();
 
-  const { transcript, listening, start, stop } = useSpeechToText(); // useSpeechToText 함수 변수
+  const { transcript, listening, start, stop, resetTranscript } = useSpeechToText(); // useSpeechToText 함수 변수
   const [step, setStep] = useState(1); // 
   const [currentLine, setCurrentLine] = useState(0); //
-  const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing'>('intro'); //
+  const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing' | 'failed'>('intro'); //
   const [targetSpell, setTargetSpell] = useState("치링치링 샤랄라 나날이 예뻐지는 나 너무나도 소중해"); //스펠
   const [gameState, setGameState] = useState<'playing' | 'victory_end' | 'defeat_end'>('playing'); //게임 변화 상태
   const [battleText, setBattleText] = useState<string | null>(null); //
@@ -198,44 +198,49 @@ const GardenPage = () => {
   useEffect(() => {
     if (currentDialogue.situation === 'speak') {
       setBattlePhase('idle');
+      setBattleText(null);
     }
-  }, [currentLine]);
+  }, [currentLine, currentDialogue.situation]);
 
   useEffect(() => {
     if(battlePhase === 'idle' && currentDialogue.situation === 'speak'){
-      setBattleText(null);
       transcriptRef.current = "";
+      resetTranscript();
       setBattlePhase('attack');
-      setIsRecording(true);
-      start();
+
+      setTimeout(() => {
+        start();
+        console.log("음성 인식 시작");
+      }, 300);
     }
   }, [battlePhase, currentDialogue.situation]);
 
   useEffect(() => {
-    if(transcript){
+    if(transcript && battlePhase === 'attack'){
       transcriptRef.current = transcript;
       console.log("현재 인식된 내용 : ", transcript);
     }
   }, [transcript]);
 
   const handleVoiceEnd = async () => {
-    const finaltranscript = transcriptRef.current;
+    console.log("handleVoiceEnd 실행");
+    const finaltranscript = transcriptRef.current.trim();
 
     if (!finaltranscript) {
       const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
       console.log('인식된 내용이 없습니다.');
-      setBattlePhase('idle');
+      setBattlePhase('failed');
       setBattleText(sebaschanDialogues);
       return;
     }
 
     console.log("목표 주문:", targetSpell);
     console.log("최종 인식된 주문:", finaltranscript);
-
-    const sendData = createSpellJson(targetSpell, finaltranscript, volume);
     
     try {
       setBattlePhase('processing');
+
+      const sendData = createSpellJson(targetSpell, finaltranscript, volume);
 
       const res = await fetch(`${SERVER_URL}/voice`, {
         method: "POST",
@@ -250,17 +255,17 @@ const GardenPage = () => {
       if (res.ok) {
         console.log("✅ 주문 성공");
         setIsTransformed(true);
-        if (isSpeak) {
-          setCurrentLine(prev => prev + 1);
-          setBattlePhase('intro');
-        }
+        setCurrentLine(prev => prev + 1);
+        setBattlePhase('intro');
+        setBattleText(null);
       } else {
         throw new Error("주문 실패!");
       }
     } catch (err) {
       console.error("❌ 서버 통신 실패", err);
-      setBattlePhase('idle');
-      setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
+      const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
+      setBattlePhase('failed');
+      setBattleText(sebaschanDialogues);
     }
   };
   
@@ -269,7 +274,7 @@ const GardenPage = () => {
 const handleMicClick = async (e: React.MouseEvent) => {
   e.stopPropagation();
   console.log("음성 인식 중지");
-  stop();
+  await stop();
   await handleVoiceEnd();
 };
 
@@ -277,8 +282,18 @@ const handleMicClick = async (e: React.MouseEvent) => {
 const handleScreenClick = () => {
   if (gameState !== 'playing') return;
 
+  if(battlePhase === 'failed' && isSpeak){
+    console.log("음성인식 실패함. - idle 상태로 전환");
+    setBattlePhase('idle');
+    setBattleText(null);
+    return;
+  }
+
   // 공격 프로세싱 넘기기
-  if(battlePhase === 'attack' || battlePhase === 'processing') return;
+  if(battlePhase === 'attack' || battlePhase === 'processing'){
+    console.log("음성인식 중이거나 처리중.");
+    return;
+  }
 
   // 일반 대화 넘기기
   if (currentLine < dialogues.length - 1) {
