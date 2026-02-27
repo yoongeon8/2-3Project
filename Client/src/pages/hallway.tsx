@@ -22,7 +22,7 @@ import background3_2 from '../assets/background3-2.png'
 import {spells, failMic} from "../../../Server/src/tsFile/spells";
 import {useSpeechToText} from "../tsFolder/speech";
 import {useVolume} from "../tsFolder/audio";
-import {createSpellJson} from "../../../Server/serverFile/damage";
+import {Enemy, createSpellJson} from "../../../Server/serverFile/damage";
 import { SERVER_URL } from './gardenPage';
 
 const GlobalStyle = createGlobalStyle`
@@ -367,42 +367,40 @@ const pulse = keyframes`
 
   const Hallway = () => {
     const navigate = useNavigate();
-
-    const {transcript, listening, start, stop} = useSpeechToText();
+  
+    const { transcript, listening, start, stop, resetTranscript } = useSpeechToText();
     const playerName = localStorage.getItem("player") ?? "미림이";
-
+  
     const [step, setStep] = useState(1);
     const [currentLine, setCurrentLine] = useState(0);
-    const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing'>('intro');
-    const [targetSpell, setTargetSpell] = useState("치링치링 샤랄라 나날이 예뻐지는 나. 너무나도 소중해!"); //스펠
-    const [gameState, setGameState] = useState<'playing' | 'victory_end' | 'defeat_end'>('playing'); //게임 변화 상태
-    const [battleText, setBattleText] = useState<string | null>(null); //스펠 텍스트
-
+    const [battlePhase, setBattlePhase] = useState<'intro' | 'idle' | 'attack' | 'processing' | 'failed'>('intro'); // ✅ 'failed' 추가
+    const [targetSpell, setTargetSpell] = useState("치링치링 샤랄라 나날이 예뻐지는 나. 너무나도 소중해!");
+    const [gameState, setGameState] = useState<'playing' | 'victory_end' | 'defeat_end'>('playing');
+    const [battleText, setBattleText] = useState<string | null>(null);
+  
     const [isTransformed, setIsTransformed] = useState(false);
-
+  
     const PLAYER_MAX_HP = 100000;
     const ENEMY_MAX_HP = 70000;
-
+  
     const [playerHp, setPlayerHp] = useState(PLAYER_MAX_HP);
     const [enemyHp, setEnemyHp] = useState(ENEMY_MAX_HP);
-
+  
     const [isHit, setIsHit] = useState(false);
-
+  
     const [currentBg, setCurrentBg] = useState(background3);
     const [showVictoryEffect, setShowVictoryEffect] = useState(false);
-
     const [showDefeatEffect, setShowDefeatEffect] = useState(false);
-
-
+  
     const playerHpPercent = (playerHp / PLAYER_MAX_HP) * 100;
     const enemyHpPercent = (enemyHp / ENEMY_MAX_HP) * 100;
-
+  
     const playerAttackLines = spells;
-
+  
     const dialogues: {
       speaker: SpeakerKey;
       situation: string;
-      text: string; 
+      text: string;
     }[] = [
       { speaker: 'player', situation: 'story', text: '실습실을 터트렸다..! 이제 교실로 이동하자!' },
       { speaker: 'sebaschan', situation: 'story', text: '좋은 생각이야!' },
@@ -416,152 +414,217 @@ const pulse = keyframes`
       { speaker: 'srT', situation: 'victory', text: '너에게 학교를 폭파시킬 재능이 있네요' },
       { speaker: 'sebaschan', situation: 'victory', text: '좋았어 이제 우린 마지막 최종보스 교장선생님께 가자!' },
     ];
-
+  
     const speakerConfig = {
       player: { name: playerName, profile: playerProfileImg },
       srT: { name: '박성래 선생님', profile: npc_profile5 },
       sebaschan: { name: '세바스찬', profile: npc_profile1 },
-      narration: {name: "나레이션", profile: null}
+      narration: { name: "나레이션", profile: null }
     } as const;
-
+  
     type SpeakerKey = keyof typeof speakerConfig;
-
+  
     const currentDialogue = dialogues[currentLine];
-    const isSpeak = currentDialogue.situation === 'speak';
-    const isBattle = currentDialogue.situation === 'battle';
+    const isSpeak = currentDialogue?.situation === 'speak';
+    const isBattle = currentDialogue?.situation === 'battle';
     const [battleLine, setBattleLine] = useState('');
-
-    const showMic = (isSpeak || isBattle) && battlePhase === "attack";
+  
+    const showMic = (isSpeak || isBattle) && battlePhase === 'attack';
     const showDialogueBox = true;
-
+  
     const isSavingRef = useRef(false);
-
-    const volume = useVolume(showMic);
-
+    const transcriptRef = useRef("");
+  
+    // ✅ useVolume에서 객체로 받기
+    const volumeData = useVolume(showMic && listening);
+  
     const getRandomBattleLine = () => {
-      const random =
-        playerAttackLines[
-          Math.floor(Math.random() * playerAttackLines.length)
-        ];
+      const random = playerAttackLines[Math.floor(Math.random() * playerAttackLines.length)];
       setBattleLine(random);
+      setTargetSpell(random); // ✅ 타겟 스펠도 업데이트
     };
-
+  
     if (!currentDialogue) return null;
-
+  
+    // ✅ 인트로 타이머
     useEffect(() => {
       const timer = setTimeout(() => {
         setStep(2);
       }, 3000);
       return () => clearTimeout(timer);
     }, []);
-
+  
+    // ✅ 배틀 시작 시 랜덤 대사 설정
     useEffect(() => {
-      if (isBattle) {
+      if (isBattle && battlePhase === 'intro') {
         getRandomBattleLine();
       }
-    }, [isBattle]);
-
-    const isRecordingRef = useRef(false);
-
+    }, [isBattle, battlePhase]);
+  
+    // ✅ speak/battle 상황이 되면 idle로 전환
     useEffect(() => {
-      if (!showMic) {
-        stop();
-        isRecordingRef.current = false;
+      if (currentDialogue.situation === 'speak' || currentDialogue.situation === 'battle') {
+        setBattlePhase('idle');
+        setBattleText(null);
       }
-    }, [showMic]);
-
+    }, [currentLine, currentDialogue.situation]);
+  
+    // ✅ idle 상태에서 speak/battle 상황이면 자동으로 녹음 시작
+    useEffect(() => {
+      if (battlePhase === 'idle' && (currentDialogue.situation === 'speak' || currentDialogue.situation === 'battle')) {
+        transcriptRef.current = "";
+        resetTranscript();
+        setBattlePhase('attack');
+  
+        setTimeout(() => {
+          start();
+          console.log("🎤 음성 인식 시작");
+        }, 300);
+      }
+    }, [battlePhase, currentDialogue.situation]);
+  
+    // ✅ transcript 업데이트
+    useEffect(() => {
+      if (transcript && battlePhase === 'attack') {
+        transcriptRef.current = transcript;
+        console.log("📝 현재 인식된 내용:", transcript);
+      }
+    }, [transcript, battlePhase]);
+  
+    // ✅ 승패 판정 (중복 방지)
+    useEffect(() => {
+      if (!isBattle) return;
+  
+      const isVictory = enemyHp <= 0;
+      const isDefeat = playerHp <= 0;
+  
+      if (isVictory || isDefeat) {
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+  
+        const finalHp = isDefeat ? 0 : playerHp;
+        saveBattleResult(finalHp);
+  
+        if (isVictory) {
+          const victoryIdx = dialogues.findIndex(d => d.situation === 'victory');
+          if (victoryIdx !== -1) setCurrentLine(victoryIdx);
+        } else {
+          const defeatIdx = dialogues.findIndex(d => d.situation === 'defeat');
+          if (defeatIdx !== -1) setCurrentLine(defeatIdx);
+        }
+  
+        setBattlePhase('idle');
+      }
+    }, [enemyHp, playerHp, isBattle]);
+  
+    const saveBattleResult = async (hp: number) => {
+      try {
+        const res = await fetch(`${SERVER_URL}/attack`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: playerName,
+            enemy: speakerConfig.srT.name,
+            hp: hp
+          })
+        });
+  
+        if (res.ok) {
+          console.log("✅ DB에 최종 HP 저장 성공");
+        }
+      } catch (err) {
+        console.error("❌ DB 저장 실패:", err);
+      }
+    };
+  
+    // ✅ 마이크 클릭 핸들러
     const handleMicClick = async (e: React.MouseEvent) => {
       e.stopPropagation();
-      
-      console.log("🎤 음성인식 중지 및 로컬 판정 시작");
-      stop();
+      console.log("🛑 사용자가 마이크 클릭 - 음성 인식 중지");
   
-      // 1. transcript 업데이트 대기
-      setTimeout(async () => {
-        if (!transcript) {
-          setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
-          setBattlePhase('idle');
-          return;
-        }
-  
-        // 2. 프론트에서 자체적으로 계산한 데이터 (score, damage 등)
-        const localJudge = createSpellJson(targetSpell, transcript, volume);
-        
-        // 서버에는 검증용으로만 전송
-        const data = {
-          target: targetSpell,
-          transcript: transcript,
-          volume: volume
-        };
-  
-        try {
-          setBattlePhase('processing');
-  
-          const res = await fetch(`${SERVER_URL}/voice`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-          });
-          
-          if (res.ok) {
-            console.log("✅ 판정 성공: HP 계산 시작");
-            
-            if (isSpeak) {
-              // [변신 단계] 성공 시 바로 다음 대화로
-              setIsTransformed(true);
-              setCurrentLine(prev => prev + 1);
-              setBattlePhase('intro'); 
-            } 
-            else if (isBattle) {
-              // [전투 단계] 프론트에서 직접 HP 감소 로직 실행
-              executeBattleTurn(localJudge.damage); 
-            }
-          } else {
-            // 판정 실패 시
-            console.log("❌ 판정 실패");
-            
-            if (isSpeak) {
-              // 변신 실패
-              setBattlePhase('idle');
-              setBattleText("더 큰 목소리로 정확하게 외쳐야 해!");
-            } else if (isBattle) {
-              // 전투 실패 - 적 턴
-              setBattleText("주문 실패! 적의 공격!");
-              
-              setTimeout(() => {
-                const isHardAttack = Math.random() < 0.1;
-                const enemyDamage = isHardAttack ? 25000 : 20000; // 성래쌤 수치
-                const attackType = isHardAttack ? "강력한 " : "";
-                
-                setPlayerHp(prev => Math.max(0, prev - enemyDamage));
-                setBattleText(`박성래 선생님의 ${attackType}공격! ${enemyDamage}의 피해를 입었다...`);
-                
-                setBattlePhase('idle');
-              }, 1200);
-            }
-          }
-        } catch (err) {
-          console.error("❌ 서버 통신 실패:", err);
-          setBattlePhase('idle');
-        }
-      }, 500);
+      await stop();
+      await handleVoiceEnd();
     };
-    
+  
+    // ✅ 음성 인식 종료 처리
+    const handleVoiceEnd = async () => {
+      console.log("🔍 handleVoiceEnd 실행");
+  
+      const finaltranscript = transcriptRef.current.trim();
+  
+      if (!finaltranscript) {
+        const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
+        console.log('❌ 인식된 내용이 없습니다.');
+        setBattlePhase('failed');
+        setBattleText(sebaschanDialogues);
+        return;
+      }
+  
+      console.log("🎯 목표 주문:", targetSpell);
+      console.log("🗣️ 최종 인식된 주문:", finaltranscript);
+      console.log("🔊 볼륨 데이터:", volumeData);
+  
+      try {
+        setBattlePhase('processing');
+  
+        // ✅ 최대 볼륨 사용
+        const volumeToSend = volumeData.max;
+  
+        const res = await fetch(`${SERVER_URL}/voice`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target: targetSpell,
+            transcript: finaltranscript,
+            volume: volumeToSend,
+          }),
+        });
+  
+        if (res.ok) {
+          console.log("✅ 주문 성공");
+  
+          // ✅ 로컬에서 데미지 계산
+          const localJudge = createSpellJson(targetSpell, finaltranscript, volumeToSend);
+  
+          if (isSpeak) {
+            // 변신 성공
+            setIsTransformed(true);
+            setCurrentLine(prev => prev + 1);
+            setBattlePhase('intro');
+            setBattleText(null);
+          } else if (isBattle) {
+            // 전투 공격
+            executeBattleTurn(localJudge.damage);
+          }
+        } else {
+          throw new Error("주문 실패!");
+        }
+      } catch (err) {
+        console.error("❌ 서버 통신 실패:", err);
+        const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
+        setBattlePhase('failed');
+        setBattleText(sebaschanDialogues);
+      }
+    };
+  
+    // ✅ 전투 턴 실행
     const executeBattleTurn = (playerDamage: number) => {
+      // 1. 플레이어 공격
       setIsHit(true);
       setEnemyHp(prev => Math.max(0, prev - playerDamage));
       setBattleText(`${playerDamage}의 데미지를 입혔다!`);
-    
+  
+      // 2. 적의 반격 (1.2초 뒤)
       setTimeout(() => {
         setIsHit(false);
-        
+  
         setEnemyHp(currentEnemyHp => {
           if (currentEnemyHp > 0) {
-            // 10% 확률로 강력한 공격
+            const enemy = Enemy.find(e => e.name === speakerConfig.srT.name);
             const isHardAttack = Math.random() < 0.1;
-            const enemyDamage = isHardAttack ? 25000 : 20000; // 성래쌤 수치
+            const enemyDamage = isHardAttack ? (enemy?.hardAttack || 25000) : (enemy?.normalAttack || 20000);
             const attackType = isHardAttack ? "강력한 " : "";
-            
+  
             setPlayerHp(prev => Math.max(0, prev - enemyDamage));
             setBattleText(`박성래 선생님의 ${attackType}공격! ${enemyDamage}의 피해를 입었다...`);
           } else {
@@ -569,78 +632,74 @@ const pulse = keyframes`
           }
           return currentEnemyHp;
         });
-    
+  
         setBattlePhase('idle');
       }, 1200);
     };
-
-    useEffect(() => {
-      if (isBattle) {
-        if (enemyHp <= 0) {
-          // 적 체력이 0일 때: 'victory' 상황의 첫 번째 대사 인덱스 찾기
-          const victoryIdx = dialogues.findIndex(d => d.situation === 'victory');
-          if (victoryIdx !== -1) setCurrentLine(victoryIdx);
-          setBattlePhase('idle'); // 배틀 페이즈 초기화
-        } else if (playerHp <= 0) {
-          // 플레이어 체력이 0일 때: 'defeat' 상황의 첫 번째 대사 인덱스 찾기
-          const defeatIdx = dialogues.findIndex(d => d.situation === 'defeat');
-          if (defeatIdx !== -1) setCurrentLine(defeatIdx);
-          setBattlePhase('idle');
-        }
-      }
-    }, [enemyHp, playerHp, isBattle]);
-
+  
+    // ✅ 화면 클릭 핸들러
     const handleNextDialogue = () => {
       // 1. 인트로 단계이거나 승리/패배 연출 중에는 클릭 방지
       if (step !== 2 || showVictoryEffect || showDefeatEffect) return;
-    
-      // 2. 패배 대사 체크: 현재 대사가 패배 상황이면 클릭 시 오버레이를 띄우고 중단
+  
+      // 2. 패배 대사 체크
       if (currentDialogue.situation === 'defeat') {
         setShowDefeatEffect(true);
-        return; // 더 이상 currentLine이 증가하지 않도록 여기서 종료합니다.
-      }
-    
-      // 3. 승리 특수 연출 체크: 선생님의 승리 확정 대사인지 확인
-      const isTeachersLastWords = 
-        currentDialogue.speaker === 'srT' && 
-        currentDialogue.situation === 'victory' &&
-        currentDialogue.text === '너에게 학교를 폭파시킬 재능이 있네요';
-    
-      if (isTeachersLastWords) {
-        setCurrentBg(background3_2); // 배경 변경
-        setShowVictoryEffect(true);  // 블러 및 문구 표시
-    
-        setTimeout(() => {
-          setShowVictoryEffect(false); 
-          setCurrentLine(prev => prev + 1); // 2초 후 다음 대사(세바스찬)로 이동
-        }, 2000); 
         return;
       }
-    
-      // 4. 배틀 상황일 때의 클릭 로직
-      if (isBattle) {
-        if (battlePhase === 'intro') {
-          setBattlePhase('idle');
-          return;
-        }
-    
-        if (battlePhase === 'idle') {
-          getRandomBattleLine();
-          setBattlePhase('attack');
-          return;
-        }
-    
-        if (battlePhase === 'attack') {
-          setEnemyHp(prev => Math.max(0, prev - 10000));
-          setBattlePhase('idle');
-          return;
-        }
+  
+      // 3. 승리 특수 연출 체크
+      const isTeachersLastWords =
+        currentDialogue.speaker === 'srT' &&
+        currentDialogue.situation === 'victory' &&
+        currentDialogue.text === '너에게 학교를 폭파시킬 재능이 있네요';
+  
+      if (isTeachersLastWords) {
+        setCurrentBg(background3_2);
+        setShowVictoryEffect(true);
+  
+        setTimeout(() => {
+          setShowVictoryEffect(false);
+          setCurrentLine(prev => prev + 1);
+        }, 2000);
+        return;
       }
-    
-      // 5. 일반 대사 흐름 로직
+  
+      // ✅ 실패 상태에서 클릭하면 다시 idle로 전환 (재시도)
+      if (battlePhase === 'failed' && (isSpeak || isBattle)) {
+        console.log("🔄 재시도 - idle 상태로 전환");
+        setBattlePhase('idle');
+        setBattleText(null);
+        if (isBattle) getRandomBattleLine();
+        return;
+      }
+  
+      // 공격/프로세싱 중에는 넘기기 불가
+      if (battlePhase === 'attack' || battlePhase === 'processing') {
+        console.log("⏸️ 음성 인식 중이거나 처리 중입니다.");
+        return;
+      }
+  
+      // idle 상태에서 speak/battle이면 마이크 다시 띄우기
+      if (battlePhase === 'idle' && (isBattle || isSpeak)) {
+        setBattleText(null);
+        setBattlePhase('attack');
+        if (isBattle) getRandomBattleLine();
+        return;
+      }
+  
+      // 일반 대화 넘기기
       if (currentLine < dialogues.length - 1) {
-        setCurrentLine(prev => prev + 1);
-      }else{
+        const nextLine = currentLine + 1;
+        setCurrentLine(nextLine);
+  
+        const nextSituation = dialogues[nextLine].situation;
+        if (nextSituation === 'battle' || nextSituation === 'speak') {
+          setBattlePhase('idle'); // ✅ idle로 설정하면 자동으로 attack으로 전환
+        } else {
+          setBattlePhase('intro');
+        }
+      } else {
         setTimeout(async () => {
           const data = {
             name: playerName,
@@ -649,29 +708,28 @@ const pulse = keyframes`
           };
           const result = await fetch(`${SERVER_URL}/attack`, {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
           });
-    
-          if(result.ok){
+  
+          if (result.ok) {
             navigate("/principal");
           }
         }, 1000);
       }
     };
-
+  
     let displayNpc = npc3_1;
     if (isHit) {
-      displayNpc = npc3_3; // 피격 시
+      displayNpc = npc3_3;
     } else if (isBattle) {
-      displayNpc = npc3_2; // 전투 중
+      displayNpc = npc3_2;
     }
-
+  
     return (
       <Container $bg={currentBg} onClick={handleNextDialogue}>
         <GlobalStyle />
-
-        {/* 1. 배틀 HUD */}
+  
         {isBattle && (
           <BattleHUD>
             <HpBarWrapper style={{ textAlign: 'left' }}>
@@ -680,7 +738,7 @@ const pulse = keyframes`
               </HpBarBg>
               <HpName>박성래 선생님</HpName>
             </HpBarWrapper>
-
+  
             <HpBarWrapper style={{ textAlign: 'right' }}>
               <HpBarBg>
                 <PlayerhpBarFill $hp={playerHpPercent} />
@@ -689,8 +747,7 @@ const pulse = keyframes`
             </HpBarWrapper>
           </BattleHUD>
         )}
-
-        {/* 2. 특수 효과 (마이크, 승리, 패배) */}
+  
         {showMic && <SpeakOverlay />}
         {showMic && (
           <SpeakMicWrapper onClick={handleMicClick}>
@@ -701,20 +758,20 @@ const pulse = keyframes`
             </MicCircle>
           </SpeakMicWrapper>
         )}
-
+  
         {step === 1 && (
           <IntroOverlay>
             <IntroText>4층 복도</IntroText>
           </IntroOverlay>
         )}
-
+  
         {showVictoryEffect && (
           <VictorySpecialOverlay>
             <VictoryTitle>성공</VictoryTitle>
             <VictorySubTitle>복도가 폭파되었다!</VictorySubTitle>
           </VictorySpecialOverlay>
         )}
-
+  
         {showDefeatEffect && (
           <DefeatSpecialOverlay>
             <DefeatTitle>패배</DefeatTitle>
@@ -725,40 +782,38 @@ const pulse = keyframes`
             </ButtonContainer>
           </DefeatSpecialOverlay>
         )}
-
-        {/* 3. STEP 2: 본격적인 대화창 및 캐릭터 영역 */}
+  
         {step === 2 && (
           <>
-            {/* [수정 포인트 1] 처음 두 대사가 아니고, 나레이션도 아닐 때만 캐릭터 이미지 출력 */}
             <StandingCharacter
               src={isBattle ? playerbattle1 : playerImg}
               alt="Player"
             />
-            <NpcCharacter2 
+            <NpcCharacter2
               src={displayNpc}
               alt="NPC"
             />
-
-            {/* 대사창 영역 */}
+  
             {showDialogueBox && (
               <DialogueSection>
                 <ProfileWrapper>
                   <ProfileInner>
-                    <ProfileImage 
+                    <ProfileImage
                       src={battleText ? speakerConfig.sebaschan.profile : speakerConfig[currentDialogue.speaker].profile || ''}
                       alt="Profile"
                     />
                   </ProfileInner>
                 </ProfileWrapper>
-
+  
                 <MessageBox>
                   <NameTag>
                     {battleText ? speakerConfig.sebaschan.name : speakerConfig[currentDialogue.speaker].name}
                   </NameTag>
-
+  
                   <DialogueText $speak={showMic}>
-                    {isBattle ? (battlePhase === 'attack' ? battleLine : battleText)
-                      : currentDialogue.text
+                    {isBattle
+                      ? (battlePhase === 'attack' ? battleLine : battleText)
+                      : (battleText || currentDialogue.text)
                     }
                   </DialogueText>
                 </MessageBox>
@@ -769,4 +824,5 @@ const pulse = keyframes`
       </Container>
     );
   };
-  export default Hallway; 
+  
+  export default Hallway;

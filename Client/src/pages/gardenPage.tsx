@@ -223,24 +223,27 @@ const GardenPage = () => {
   }, [transcript]);
 
   const handleVoiceEnd = async () => {
-    console.log("handleVoiceEnd 실행");
+    console.log("🔍 handleVoiceEnd 실행");
+    
     const finaltranscript = transcriptRef.current.trim();
 
     if (!finaltranscript) {
       const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
-      console.log('인식된 내용이 없습니다.');
+      console.log('❌ 인식된 내용이 없습니다.');
       setBattlePhase('failed');
       setBattleText(sebaschanDialogues);
       return;
     }
 
-    console.log("목표 주문:", targetSpell);
-    console.log("최종 인식된 주문:", finaltranscript);
-    
+    console.log("🎯 목표 주문:", targetSpell);
+    console.log("🗣️ 최종 인식된 주문:", finaltranscript);
+    console.log("🔊 볼륨 데이터:", volume);  // ✅ 디버깅
+
     try {
       setBattlePhase('processing');
 
-      const sendData = createSpellJson(targetSpell, finaltranscript, volume);
+      // ✅ 최대 볼륨 사용 (말하는 동안 가장 큰 소리)
+      const volumeToSend = volume.max;
 
       const res = await fetch(`${SERVER_URL}/voice`, {
         method: "POST",
@@ -248,7 +251,7 @@ const GardenPage = () => {
         body: JSON.stringify({
           target: targetSpell,
           transcript: finaltranscript,
-          volume: sendData.decibel,
+          volume: volumeToSend,  // ✅ 최대 볼륨 전송
         }),
       });
 

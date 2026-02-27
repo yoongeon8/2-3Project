@@ -70,7 +70,6 @@ app.post("/voice", (req: Request, res: Response) => {
   }
 
   try {
-    // ✅ 서버에서 createSpellJson으로 유사도 계산
     const result = createSpellJson(target, transcript, volume);
     
     console.log("📊 계산 결과:", {
@@ -80,8 +79,6 @@ app.post("/voice", (req: Request, res: Response) => {
       damage: result.damage
     });
 
-    // ✅ damage.ts의 로직에 따르면:
-    // finalScore >= 50 && volume >= 1 이면 성공
     if (result.firstJudge === "성공" && result.damage > 0) {
       res.status(200).json({ 
         success: true, 
