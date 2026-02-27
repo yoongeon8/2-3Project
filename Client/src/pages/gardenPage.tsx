@@ -184,6 +184,7 @@ const GardenPage = () => {
   const [isRecording, setIsRecording] = useState(false);
 
   const volume = useVolume(showMic && listening);
+  const transcriptRef = useRef("");
 
   if (!currentDialogue) return null;
 
@@ -210,56 +211,35 @@ const GardenPage = () => {
     }
   }, [battlePhase, currentDialogue.situation]);
 
-  const transcriptRef = useRef("");
-
   useEffect(() => {
-    if (transcript) transcriptRef.current = transcript;
+    if(transcript){
+      transcriptRef.current = transcript;
+      console.log("현재 인식된 내용 : ", transcript);
+    }
   }, [transcript]);
 
-  useEffect(() => {
-    if(showMic){
-      console.log("🎧 listening:", listening);
-      console.log("📝 transcript:", transcript);
-    }
-  }, [listening, transcript]);
-
-
-
-  useEffect(() => {
-    if(!listening && isRecording){ 
-      console.log("음성 인식 자동 종료됨.");
-      handleVoiceEnd();
-    }
-  }, [listening, isRecording]);
-
-
   const handleVoiceEnd = async () => {
-    setIsRecording(false);
-    
     const finaltranscript = transcriptRef.current;
 
-    if(!finaltranscript){
+    if (!finaltranscript) {
       const sebaschanDialogues = failMic[Math.floor(Math.random() * failMic.length)];
-      console.log('인식된 내용이 없습니다.', finaltranscript);
+      console.log('인식된 내용이 없습니다.');
       setBattlePhase('idle');
       setBattleText(sebaschanDialogues);
       return;
     }
 
-    console.log("목표 주문", targetSpell);
-    console.log("최종 인식된 주문", finaltranscript);
+    console.log("목표 주문:", targetSpell);
+    console.log("최종 인식된 주문:", finaltranscript);
 
-    const sendData = createSpellJson(
-      targetSpell,
-      finaltranscript,
-      volume
-    );
-    try{
+    const sendData = createSpellJson(targetSpell, finaltranscript, volume);
+    
+    try {
       setBattlePhase('processing');
 
       const res = await fetch(`${SERVER_URL}/voice`, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           target: targetSpell,
           transcript: finaltranscript,
@@ -267,18 +247,18 @@ const GardenPage = () => {
         }),
       });
 
-      if(res.ok){
-        console.log("주문 성공");
+      if (res.ok) {
+        console.log("✅ 주문 성공");
         setIsTransformed(true);
-        if(isSpeak){
+        if (isSpeak) {
           setCurrentLine(prev => prev + 1);
           setBattlePhase('intro');
         }
-      }else{
+      } else {
         throw new Error("주문 실패!");
       }
-    } catch(err){
-      console.error("서버 통신 실패", err);
+    } catch (err) {
+      console.error("❌ 서버 통신 실패", err);
       setBattlePhase('idle');
       setBattleText(failMic[Math.floor(Math.random() * failMic.length)]);
     }
@@ -290,16 +270,12 @@ const handleMicClick = async (e: React.MouseEvent) => {
   e.stopPropagation();
   console.log("음성 인식 중지");
   stop();
-  return;
+  await handleVoiceEnd();
 };
 
 // 대사 화면 넘기기
 const handleScreenClick = () => {
   if (gameState !== 'playing') return;
-
-  if (battlePhase === 'idle' && isSpeak) {
-    console.log("마이크 UI 표시");
-  }
 
   // 공격 프로세싱 넘기기
   if(battlePhase === 'attack' || battlePhase === 'processing') return;
