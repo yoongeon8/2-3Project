@@ -218,11 +218,6 @@ const GardenPage = () => {
 
   useEffect(() => {
     if(showMic){
-      setBattleText(null);
-      transcriptRef.current = "";
-      setBattlePhase('attack');
-      setIsRecording(true);
-      start();
       console.log("🎧 listening:", listening);
       console.log("📝 transcript:", transcript);
     }
