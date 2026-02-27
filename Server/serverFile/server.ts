@@ -50,22 +50,60 @@ app.post("/auth", (req: Request, res: Response) => {
 
 // 음성 처리
 app.post("/voice", (req: Request, res: Response) => {
-  const { target, transcript, volume, finalScore } = req.body;
+  const { target, transcript, volume } = req.body;
+
+  console.log("🎤 음성 요청:", { target, transcript, volume });
 
   if (!target || !transcript) {
     console.error("❌ 필수 데이터 누락:", { target, transcript });
-    return res.status(400).send("주문 내용이나 인식된 텍스트가 없습니다.");
+    return res.status(400).json({ 
+      success: false, 
+      message: "주문 내용이나 인식된 텍스트가 없습니다." 
+    });
+  }
+
+  if (typeof volume !== 'number' || volume < 0) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "유효한 볼륨 값이 필요합니다." 
+    });
   }
 
   try {
-    if (finalScore >= 50 && volume >= 1) {
-      res.status(200).send("음성인식을 성공하였습니다.");
+    // ✅ 서버에서 createSpellJson으로 유사도 계산
+    const result = createSpellJson(target, transcript, volume);
+    
+    console.log("📊 계산 결과:", {
+      finalScore: result.finalScore,
+      firstJudge: result.firstJudge,
+      secondJudge: result.secondJudge,
+      damage: result.damage
+    });
+
+    // ✅ damage.ts의 로직에 따르면:
+    // finalScore >= 50 && volume >= 1 이면 성공
+    if (result.firstJudge === "성공" && result.damage > 0) {
+      res.status(200).json({ 
+        success: true, 
+        message: "주문 성공!",
+        data: result
+      });
     } else {
-      res.status(403).send("음성인식을 실패하였습니다.");
+      res.status(403).json({ 
+        success: false, 
+        message: "주문 실패! 다시 시도해주세요.",
+        data: result,
+        reason: result.finalScore < 50 
+          ? "발음이 정확하지 않습니다" 
+          : "소리가 너무 작습니다"
+      });
     }
   } catch (err) {
-    console.error(err);
-    res.status(500).send("음성 처리 오류");
+    console.error("❌ 음성 처리 오류:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "음성 처리 중 오류가 발생했습니다." 
+    });
   }
 });
 
