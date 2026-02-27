@@ -200,6 +200,16 @@ const GardenPage = () => {
     }
   }, [currentLine]);
 
+  useEffect(() => {
+    if(battlePhase === 'idle' && currentDialogue.situation === 'speak'){
+      setBattleText(null);
+      transcriptRef.current = "";
+      setBattlePhase('attack');
+      setIsRecording(true);
+      start();
+    }
+  }, [battlePhase, currentDialogue.situation]);
+
   const transcriptRef = useRef("");
 
   useEffect(() => {
@@ -217,6 +227,8 @@ const GardenPage = () => {
       console.log("📝 transcript:", transcript);
     }
   }, [listening, transcript]);
+
+
 
   useEffect(() => {
     if(!listening && isRecording){ 
