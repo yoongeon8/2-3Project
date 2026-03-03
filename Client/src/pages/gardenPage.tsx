@@ -237,12 +237,12 @@ const GardenPage = () => {
 
     console.log("🎯 목표 주문:", targetSpell);
     console.log("🗣️ 최종 인식된 주문:", finaltranscript);
-    console.log("🔊 볼륨 데이터:", volume);  // ✅ 디버깅
+    console.log("🔊 볼륨 데이터:", volume);
 
     try {
       setBattlePhase('processing');
 
-      // ✅ 최대 볼륨 사용 (말하는 동안 가장 큰 소리)
+      // 최대 볼륨 사용 (말하는 동안 가장 큰 소리)
       const volumeToSend = volume.max;
 
       const res = await fetch(`${SERVER_URL}/voice`, {
@@ -251,7 +251,7 @@ const GardenPage = () => {
         body: JSON.stringify({
           target: targetSpell,
           transcript: finaltranscript,
-          volume: volumeToSend,  // ✅ 최대 볼륨 전송
+          volume: volumeToSend,  // 최대 볼륨 전송
         }),
       });
 

@@ -574,15 +574,24 @@ const PrincipalPage = () => {
   };
 
   // ✅ 화면 클릭 핸들러
-  const handleScreenClick = () => {
+  const handleScreenClick = async () => {
     if (gameState !== 'playing') return;
 
     // ✅ 실패 상태에서 클릭하면 다시 idle로 전환 (재시도)
     if (battlePhase === 'failed' && (isSpeak || isBattle)) {
-      console.log("🔄 재시도 - idle 상태로 전환");
+      setEnemyHp(currentEnemyHp => {
+        if (currentEnemyHp > 0) {
+          const enemy = Enemy.find(e => e.name === speakerConfig.principal.name);
+          const isHardAttack = Math.random() < 0.1;
+          const enemyDamage = isHardAttack ? (enemy?.hardAttack || 0) : (enemy?.normalAttack || 0);
+          setPlayerHp(prev => Math.max(0, prev - enemyDamage));
+          setBattleText(`선생님들의 공격! ${enemyDamage}의 피해를 입었다...`);
+        } else {
+          setBattleText("선생님들을 쓰러뜨렸다!");
+        }
+        return currentEnemyHp;
+      });
       setBattlePhase('idle');
-      setBattleText(null);
-      if (isBattle) getRandomBattleLine();
       return;
     }
 
@@ -607,30 +616,47 @@ const PrincipalPage = () => {
 
       const nextSituation = dialogues[nextLine].situation;
       if (nextSituation === 'battle' || nextSituation === 'speak') {
-        setBattlePhase('idle'); // ✅ idle로 설정하면 자동으로 attack으로 전환
+        setBattlePhase('idle');
       } else {
         setBattlePhase('intro');
       }
     } else {
-      setTimeout(async () => {
+      try {
+        setBattlePhase('processing'); // 로딩 상태 시작
+  
         const data = {
           name: playerName,
           enemy: speakerConfig.principal.name,
           hp: playerHp
         };
-        const result = await fetch(`${SERVER_URL}/attack`, {
+  
+        // 공격 결과 저장
+        const attackRes = await fetch(`${SERVER_URL}/attack`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
         });
-
-        if (result.ok) {
-          const calcRank = await fetch(`${SERVER_URL}/calc/ranking`, {
+  
+        if (attackRes.ok) {
+          // 랭킹 계산
+          console.log("공격 저장 완료, 랭킹 계산 중...");
+          const calcRes = await fetch(`${SERVER_URL}/calc/ranking`, {
             method: "POST"
           });
-          navigate("/rank");
+  
+          if (calcRes.ok) {
+            setTimeout(() => navigate("/rank"), 1000);
+          } else {
+            throw new Error("랭킹 계산에 실패했습니다.");
+          }
+        } else {
+          throw new Error("공격 데이터 저장에 실패했습니다.");
         }
-      }, 1000);
+  
+      } catch (error) {
+        console.error("Error:", error);
+        alert(error instanceof Error ? error.message : "알 수 없는 오류 발생");
+      }
     }
   };
 

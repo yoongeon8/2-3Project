@@ -429,7 +429,7 @@ const ComputerLabPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: playerName, // ✅ 수정: speakerConfig.teachers → playerName
+          name: playerName,
           enemy: speakerConfig.teachers.name,
           hp: hp
         })
@@ -443,7 +443,7 @@ const ComputerLabPage = () => {
     }
   };
 
-  // ✅ 마이크 클릭 핸들러
+  // 마이크 클릭 핸들러
   const handleMicClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log("🛑 사용자가 마이크 클릭 - 음성 인식 중지");
@@ -489,7 +489,6 @@ const ComputerLabPage = () => {
       if (res.ok) {
         console.log("✅ 주문 성공");
 
-        // ✅ 로컬에서 데미지 계산
         const localJudge = createSpellJson(targetSpell, finaltranscript, volumeToSend);
 
         if (isSpeak) {
@@ -541,16 +540,26 @@ const ComputerLabPage = () => {
     }, 1200);
   };
 
-  // ✅ 화면 클릭 핸들러
-  const handleScreenClick = () => {
+  // 화면 클릭 핸들러
+  const handleScreenClick = async () => {
     if (gameState !== 'playing') return;
 
-    // ✅ 실패 상태에서 클릭하면 다시 idle로 전환 (재시도)
+    // 실패 상태에서 클릭하면 다시 idle로 전환
     if (battlePhase === 'failed' && (isSpeak || isBattle)) {
       console.log("🔄 재시도 - idle 상태로 전환");
+      setEnemyHp(currentEnemyHp => {
+        if (currentEnemyHp > 0) {
+          const enemy = Enemy.find(e => e.name === speakerConfig.teachers.name);
+          const isHardAttack = Math.random() < 0.1;
+          const enemyDamage = isHardAttack ? (enemy?.hardAttack || 0) : (enemy?.normalAttack || 0);
+          setPlayerHp(prev => Math.max(0, prev - enemyDamage));
+          setBattleText(`선생님들의 공격! ${enemyDamage}의 피해를 입었다...`);
+        } else {
+          setBattleText("선생님들을 쓰러뜨렸다!");
+        }
+        return currentEnemyHp;
+      });
       setBattlePhase('idle');
-      setBattleText(null);
-      if (isBattle) getRandomBattleLine();
       return;
     }
 
@@ -575,27 +584,36 @@ const ComputerLabPage = () => {
 
       const nextSituation = dialogues[nextLine].situation;
       if (nextSituation === 'battle' || nextSituation === 'speak') {
-        setBattlePhase('idle'); // ✅ idle로 설정하면 자동으로 attack으로 전환
+        setBattlePhase('idle');
       } else {
         setBattlePhase('intro');
       }
     } else {
-      setTimeout(async () => {
+      try{
+        setBattlePhase('processing');
+
         const data = {
           name: playerName,
           enemy: speakerConfig.teachers.name,
           hp: playerHp
         };
-        const result = await fetch(`${SERVER_URL}/attack`, {
+
+        const response = await fetch(`${SERVER_URL}/attack`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type" : "application/json" },
           body: JSON.stringify(data)
         });
 
-        if (result.ok) {
-          navigate("/hallway");
+        const result = await response.json();
+
+        if(response.ok && result.success){
+          console.log("저장 성공 : ", result.message);
+          setTimeout(() => navigate("/hallway"), 1000); 
         }
-      }, 1000);
+      }catch(error){
+        console.error("네트워크 오류", error);
+        alert("서버와 통신 중 오류가 발생했습니다.");
+      }
     }
   };
 

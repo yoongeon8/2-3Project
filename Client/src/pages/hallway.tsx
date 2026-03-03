@@ -638,7 +638,7 @@ const pulse = keyframes`
     };
   
     // ✅ 화면 클릭 핸들러
-    const handleNextDialogue = () => {
+    const handleNextDialogue = async () => {
       // 1. 인트로 단계이거나 승리/패배 연출 중에는 클릭 방지
       if (step !== 2 || showVictoryEffect || showDefeatEffect) return;
   
@@ -668,9 +668,19 @@ const pulse = keyframes`
       // ✅ 실패 상태에서 클릭하면 다시 idle로 전환 (재시도)
       if (battlePhase === 'failed' && (isSpeak || isBattle)) {
         console.log("🔄 재시도 - idle 상태로 전환");
+        setEnemyHp(currentEnemyHp => {
+          if (currentEnemyHp > 0) {
+            const enemy = Enemy.find(e => e.name === speakerConfig.srT.name);
+            const isHardAttack = Math.random() < 0.1;
+            const enemyDamage = isHardAttack ? (enemy?.hardAttack || 0) : (enemy?.normalAttack || 0);
+            setPlayerHp(prev => Math.max(0, prev - enemyDamage));
+            setBattleText(`선생님들의 공격! ${enemyDamage}의 피해를 입었다...`);
+          } else {
+            setBattleText("선생님들을 쓰러뜨렸다!");
+          }
+          return currentEnemyHp;
+        });
         setBattlePhase('idle');
-        setBattleText(null);
-        if (isBattle) getRandomBattleLine();
         return;
       }
   
@@ -700,22 +710,31 @@ const pulse = keyframes`
           setBattlePhase('intro');
         }
       } else {
-        setTimeout(async () => {
+        try{
+          setBattlePhase('processing');
+  
           const data = {
             name: playerName,
             enemy: speakerConfig.srT.name,
             hp: playerHp
           };
-          const result = await fetch(`${SERVER_URL}/attack`, {
+  
+          const response = await fetch(`${SERVER_URL}/attack`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type" : "application/json" },
             body: JSON.stringify(data)
           });
   
-          if (result.ok) {
-            navigate("/principal");
+          const result = await response.json();
+  
+          if(response.ok && result.success){
+            console.log("저장 성공 : ", result.message);
+            setTimeout(() => navigate("/hallway"), 1000); 
           }
-        }, 1000);
+        }catch(error){
+          console.error("네트워크 오류", error);
+          alert("서버와 통신 중 오류가 발생했습니다.");
+        }
       }
     };
   
